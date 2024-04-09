@@ -1,0 +1,209 @@
+\documentclass[12pt,letterpaper]{article}
+
+\usepackage[hypertexnames=false]{hyperref}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{enumerate}
+\usepackage{natbib}
+
+% Custom packages
+\usepackage{amssymb}
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{algorithm}      % algorithm environment
+\usepackage{algpseudocode}
+\usepackage{multirow}
+\usepackage{sectsty}
+\usepackage{tabularx}
+\usepackage{tikz}           % vector graphics
+\usepackage{bm}             % bold math symbols
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{import}
+\usepackage{titling}
+\usepackage{natbib}
+\usetikzlibrary{arrows, backgrounds, patterns, matrix, shapes, fit, 
+  calc, shadows, plotmarks}
+
+
+% Custom commands
+\let\oldvec\vec
+\renewcommand\vec{\bm}
+\newcommand{\simfn}{\mathtt{sim}} % similarity function
+\newcommand{\truncsimfn}{\underline{\simfn}} % truncated similarity function
+\newcommand{\blockfn}{\mathtt{BlockFn}} % blocking function
+\newcommand{\distfn}{\mathtt{dist}} % distance function
+\newcommand{\valset}{\mathcal{V}} % attribute value set
+\newcommand{\entset}{\mathcal{R}} % set of records that make up an entity
+\newcommand{\partset}{\mathcal{E}} % set of entities that make up a partition
+\newcommand{\1}[1]{\mathbb{I}\!\left[#1\right]} % indicator function
+\newcommand{\euler}{\mathrm{e}} % Euler's constant
+\newcommand{\dblink}{\texttt{\upshape \lowercase{d-blink}}} % Name of scalable Bayesian ER model
+\newcommand{\blink}{\texttt{\upshape \lowercase{blink}}} % Name of original Bayesian ER model
+\def\spacingset#1{\renewcommand{\baselinestretch}%
+  {#1}\small\normalsize} \spacingset{1}
+
+\newtheorem{remark}{Remark}
+\newtheorem{proposition}{Proposition}
+\newtheorem{definition}{Definition}
+\newtheorem{lemma}{Lemma}
+
+% DON'T change margins - should be 1 inch all around.
+\addtolength{\oddsidemargin}{-.5in}%
+\addtolength{\evensidemargin}{-.5in}%
+\addtolength{\textwidth}{1in}%
+\addtolength{\textheight}{1.3in}%
+\addtolength{\topmargin}{-.8in}%
+
+\sectionfont{\large\nohang\centering\MakeUppercase}
+
+\title{fabl vs fastLink: An Attempt at Mathematical Rigor}
+\author{Brian Kundinger}
+
+\begin{document}
+\maketitle
+\spacingset{1.5}
+
+Here are a couple of realizations about fabl and record linkage in general. First, a surprising result with an incredibly straightforward proof. 
+
+\section{Expected Weight for Non-matching Record Pairs}
+
+Let $p \in [P]$ denote the patterns that comparison vectors can take. Let $w_p = \frac{m_p}{u_p}$ where $m_p = \prod_{p = 1}^P m_p ^ {I(\gamma_{ij} = h_p)}$ and $u_p$ is defined similarly. Let $E_u[w]$ be the expected value of the weight for nonmatching comparison vector, so $E_u[w] = E\left[\prod_{p = 1}^P w_p ^ {I(\gamma_{ij} = h_p)} | \Delta_{ij} = 0 \right]$. We have 
+\begin{align*}
+	E_u[w] = \sum_{p = 1}^P \frac{m_p}{u_p} u_p = \sum_{p = 1}^P m_p = 1.
+\end{align*}
+
+Surprising! This is true regardless of which Fellegi Sunter style model we choose, for any choice of $m$ and $u$, by definition. This seems to just be a property of likelihood ratios, but its interesting that it comes up on our setting.
+
+Another interesting fact:
+\begin{align*}
+	V_u[w] &= E_u[w^2] - E_u[w]^2 \\
+	&= \sum_{p=1}^P \frac{m_p^2}{u_p^2} u_p - 1  \\
+	&= \sum_{p=1}^P \frac{m_p^2}{u_p} - 1 \\
+	&= \sum_{p=1}^P \frac{m_p}{u_p}m_p - 1 \\
+	&= E_m[w] - 1
+\end{align*}
+
+This is a pretty result! It also suggests that for any reasonable Fellegi Sunter linkage task, we must have $E_m[w] > 1$.
+
+Moreover, we gain some insight around something you mentioned in our call. Using the actual definition of variance, we have
+\begin{align*}
+	V_u[w] &= E_u[w - E_u[w]]^2 = \sum_{p=1}^P(w - 1)^2 u_p
+\end{align*}
+This means that the spread of the weights around 1 is the actual definition of the variance for the nonmatching record pairs, and that increasing the variability of the nonmatching pairs is equivalent to increasing $E_m[w]$. 
+
+Interesting stuff!
+\section{Fixed and True $m$ and $u$ parameters}
+
+We compare the estimates of the fitted match probability under base Fellegi Sunter (FS) and fabl (fabl). In order to compare, we assume that $m$ and $u$ are the same across the two models, and use the correspondance $\lambda = \frac{\pi}{n_1}.$ We will also assume there for every record in $X_2$, there is at most one matching record in $X_1$. In both models, we are looking for $p(\Delta_{ij} = 1 | \Gamma, m, u)$. 
+
+%The estimate under fastLink is
+%\begin{align*}
+%p_{\text{fastLink}}(\Delta_{ij} = 1| \gamma_{ij} = h_p) &= \frac{\lambda \prod_{p = 1}^P m_p ^{I(\gamma_{ij} = h_p)}}{\lambda \prod_{p = 1}^P m_p ^{I(\gamma_{ij} = h_p)} + (1 - \lambda)\prod_{p = 1}^P u_p ^ {I(\gamma_{ij} = h_p)}} \\
+%&= \frac{\frac{\pi}{n_1} \prod_{p = 1}^P w_p^{I(\gamma_{ij} = h_p)}}{\frac{\pi}{n_1}  \prod_{p = 1}^P w_p^{I(\gamma_{ij} = h_p)} + (1 - \frac{\pi}{n_1})}
+%\end{align*}
+%
+%Under fabl, the estimate is
+%\begin{align*}
+%	p_{\text{fabl}}(\Delta_{ij} = 1| \gamma_{ij} = h_p) &= \frac{\frac{\pi}{n_1} \prod_{p = 1}^P w_p^{I(\gamma_{ij} = h_p)}}{\frac{\pi}{n_1} \sum_{q = 1}^{n_1} \prod_{p = 1}^P w_p^{I(\gamma_{qj} = h_p)} + (1 - \pi)}
+%	&= \frac{\frac{\pi}{n_1} \prod_{p = 1}^P w_p^{I(\gamma_{ij} = h_p)}}{\frac{\pi}{n_1} \sum_{q = 1}^{n_1} \prod_{p = 1}^P w_p^{I(\gamma_{qj} = h_p)} + (1 - \pi)}
+%\end{align*}
+
+Because of the independent record pair assumption in standard Fellegi Sunter, the estimate under fastLink can be expressed as.
+\begin{align*}
+	p_{\text{fastLink}}(\Delta_{ij} = 1| \gamma_{ij} = h_p, m, u) &= \frac{\lambda m_p}{\lambda m_p + (1 - \lambda)u_p} \\
+	&= \frac{\frac{\pi}{n_1} w_p}{\frac{\pi}{n_1} w_p + (1 - \frac{\pi}{n_1})} \\
+	&= \frac{w_p}{w_p + (\frac{n_1}{\pi} - 1)}
+\end{align*}
+
+Under fabl, the match probability for the $(i, j)$ record pair is dependent on the weights for all record pairs involving record $j \in X_2$. Letting $\Gamma_{(-j)} = \{\gamma_{qj} | \forall q \neq i\}$, we can more explicitly notate this dependency:
+\begin{align*}
+	p_{\text{fabl}}(\Delta_{ij} = 1| \gamma_{ij} = h_p, \Gamma_{(-j)} = \gamma_{(-j)}) &= \frac{\frac{\pi}{n_1} w_p}{\frac{\pi}{n_1} \sum_{q = 1}^{n_1} \prod_{p = 1}^P w_p^{I(\gamma_{qj} = h_p)} + (1 - \pi)} \\
+	&= \frac{w_p}{w_p  + \sum_{q \neq j} \prod_{p = 1}^P w_p^{I(\gamma_{qj} = h_p)} + (\frac{n_1}{\pi} - n_1)}
+\end{align*}
+
+With this explicit form, we gain a better since of how fabl operates. Let $\gamma_{ij}$ be a nonmatching record pair. When $Z_j > 0$, we know that $\sum_{q \neq j} \prod_{p = 1}^P w_p^{I(\gamma_{qj} = h_p)}$ will contain a matching record pair, and will therefore likely contain a large $w_p$, and therefore $p_{\text{fabl}}(\Delta_{ij} = 1| \gamma_{ij} = h_p, \Gamma_{(-j)} = \gamma_{(-j)})$ will be shrunk towards zero. 
+
+Unfortunately, we cannot simply take an expectation of this quantity over the possible orientations of $\Gamma_{(-j)}$, because it is in the denominator. 
+
+\section{Expected Ratio of Match Probabilities}
+
+I'm not sure if this is hacky or not, but I did find a way to construct an interesting quantity: the expected ratio of match probabilities between the two models. I believe this quantity would characterize the relationship between the update for the $m$ parameters (and by extension, the $u$ parameters as well) for the two models, leading to different estimates of those parameters (and then of course)
+
+Let $\gamma_{ij}$ be a nonmatching record pair. For any pattern $h_p$, we have
+\begin{align*}
+	E_{\Gamma_{(-j)}}&\left[\frac{p_{\text{fastLink}}(\Delta_{ij} = 1| \gamma_{ij} = h_p)}{p_{\text{fabl}}(\Delta_{ij} = 1| \gamma_{ij} = h_p, \Gamma_{(-j)} = \gamma_{(-j)})}\right] \\
+	&= E_{\Gamma_{(-j)}}\left[\frac{\frac{w_p}{w_p + (\frac{n_1}{\pi} - 1)}}{\frac{w_p}{w_p  + \sum_{q \neq j} \prod_{p = 1}^P w_p^{I(\gamma_{qj} = h_p)} + (\frac{n_1}{\pi} - n_1)}} \right] \\
+	&= E_{\Gamma_{(-j)}}\left[\frac{w_p  + \sum_{q \neq j} \prod_{p = 1}^P w_p^{I(\gamma_{qj} = h_p)} + (\frac{n_1}{\pi} - n_1)}{w_p + (\frac{n_1}{\pi} - 1)} \right]\\
+	&=	E_{\Gamma_{(-j)}}\left[E\left[\frac{w_p  + \sum_{q \neq j} \prod_{p = 1}^P w_p^{I(\gamma_{qj} = h_p)} + (\frac{n_1}{\pi} - n_1)}{w_p + (\frac{n_1}{\pi} - 1)} \Bigg| I(Z_j > 0) \right] \right]\\
+	&=\pi \left(\frac{w_p  + E_m[w] + n_1 - 2 + (\frac{n_1}{\pi} - n_1)}{w_p + (\frac{n_1}{\pi} - 1)}\right) + (1-\pi)\left(\frac{w_p +  n_1 - 1 + (\frac{n_1}{\pi} - n_1)}{w_p + (\frac{n_1}{\pi} - 1)}\right) \\
+	&= \pi \left(\frac{w_p  + E_m[w] - 2 + (\frac{n_1}{\pi})}{w_p + (\frac{n_1}{\pi} - 1)}\right) + (1-\pi)(1)\\
+	&> 1
+\end{align*}
+because $E_m[w] > 1$.
+
+If we assume $\gamma_{ij}$ is a matching record pair, conditioning on $I(Z_j>0)$ doesn't give any useful information, and the expected ratio is 1. So on average, it seems like fastLink attributes more match probability to nonmatching pairs than fabl does. Immediately, this suggests that the record level rate of matching parameter $\pi_{\text{fastLink}}= \lambda n_1$ would be greater on average than $\pi_{\text{fabl}}$. 
+
+Moreover, I used the quotient rule to check that the quantity $\frac{w_p  + E_m[w] - 2 + (\frac{n_1}{\pi})}{w_p + (\frac{n_1}{\pi} - 1)}$ is increasing in $w_p$. This means that smaller weights proportionally exhibit more intense shrinkage. Interesting!
+
+Caveat: I fear there may be something wrong with this math. It just weirds me out that I was able to calculate that quantity, but not the reverse, 
+$$E_{\Gamma_{(-j)}} \left[\frac{p_{\text{fabl}}(\Delta_{ij} = 1| \gamma_{ij} = h_p)}{p_{\text{fastlink}}(\Delta_{ij} = 1| \gamma_{ij} = h_p, \Gamma_{(-j)} = \gamma_{(-j)})}\right],$$ 
+or the difference $$E_{\Gamma_{(-j)}}\left[p_{\text{fastlink}}(\Delta_{ij} = 1| \gamma_{ij} = h_p, \Gamma_{(-j)} = \gamma_{(-j)}) - p_{\text{fabl}}(\Delta_{ij} = 1| \gamma_{ij} = h_p)\right]$$ because the randomness was found in the demoninator. That's why I said it felt hacky. 
+
+\section{Less Concrete Thoughts}
+
+By removing match probability associated with low weight patterns, I anticipate that $m_{\hat{p}_{\text{fastLink}}} < m_{\hat{p}_{\text{fabl}}}$ for high weight patterns, and $m_{\hat{p}_{\text{fastLink}}} > m_{\hat{p}_{\text{fabl}}}$ for low weight patterns. I feel like this would have the effect of increasing $E_m[w]$.
+
+Additionally, because of the normalization that occurs in $p_{\text{fabl}}(\Delta_{ij} = 1| \gamma_{ij} = h_p, \Gamma_{(-j)} = \gamma_{(-j)})$, we see that fabl is able to not match certain high weight patterns if they are in the company of even higher weight patterns. This is not possible in FS, where each record is viewed independently. Heuristically, this seems to diversify the set of records that are labeled nonmatches. And as we saw before, adding variability to the $w_p$ associated with nonmatches is equivalent to increasing $E_m[w]$. 
+
+Lastly, if we are indeed increasing $E_m[w] = \sum_{p=1}^P \frac{m_p}{u_p}m_p$, it seems to me that we would also be increasing the KL divergence between the $m$ and $u$ distributions, which here is defined as
+\begin{align*}
+	KL(m||u) = \sum_{p=1}^P \log \left(\frac{m_p}{u_p}\right)m_p
+\end{align*}
+This would be pretty strong mathematical way of saying "fabl is better at distinguishing between the matching and nonmatching record pairs".
+
+%\begin{align*}
+%	p_{\text{fabl}}(\Delta_{ij} = 1| \gamma_{ij} = h_p) - p_{\text{fastLink}}(\Delta_{ij} = 1| \gamma_{ij} = h_p) &\geq 0 \\
+%	\implies \frac{\frac{\pi}{n_1} w_p}{\frac{\pi}{n_1} \sum_{q = 1}^{n_1} \prod_{p = 1}^P w_p^{I(\gamma_{qj} = h_p)} + (1 - \pi)} -  \frac{\frac{\pi}{n_1} w_p}{\frac{\pi}{n_1} w_p + (1 - \frac{\pi}{n_1})}  &\geq 0\\
+%	\implies \frac{1}{\sum_{q = 1}^{n_1} \prod_{p = 1}^P w_p^{I(\gamma_{qj} = h_p)} + \left(\frac{n_1}{\pi} - n_1\right)} - \frac{1}{w_p + (\frac{n_1}{\pi} - n_1)} &\geq 0 \\
+%	\implies \sum_{q = 1}^{n_1} \prod_{p = 1}^P w_p^{I(\gamma_{qj} = h_p)} + \left(\frac{n_1}{\pi} - n_1\right) - \left[w_p + \left(\frac{n_1}{\pi} - 1\right)\right] &\leq 0 \\
+%	\implies \sum_{q \neq i} \prod_{p = 1}^P w_p^{I(\gamma_{qj} = h_p)} -n_1 + 1 &\leq 0 \\ 
+%	\implies \sum_{q \neq i} \prod_{p = 1}^P w_p^{I(\gamma_{qj} = h_p)} \leq n_1 - 1
+%\end{align*}
+%
+%We first consider when $j \in X_2$ has no matching record in $X_1$. Then for every $i \in X_1$, we know that for every $q \neq i$, we have $\Delta_{qj} = 0$, so
+%\begin{align*}
+%	E\left[\sum_{q \neq i} \prod_{p = 1}^P w_p^{I(\gamma_{qj} = h_p)}\right] = E_u\left[\sum_{q \neq i} \prod_{p = 1}^P w_p^{I(\gamma_{qj} = h_p)}\right] = (n_1 - 1) E_u[w] = n_1 - 1.
+%\end{align*}
+%Thus the probabilities for such record pairs are equal in expectation for the two models. 
+%
+%Now, consider when $j \in X_2$ does have a matching record in $X_1$. Let $q^{*}$ be the index for the matching record, and et $i \in X_1$ be any other record. Then
+%
+%\begin{align*}
+%	E\left[\sum_{q \neq i} \prod_{p = 1}^P w_p^{I(\gamma_{qj} = h_p)}\right] &= E_m\left[\prod_{p = 1}^P w_p^{I(\gamma_{q^{*}j} = h_p)}\right] + E_u\left[\sum_{q \neq i, q^{*}} \prod_{p = 1}^P w_p^{I(\gamma_{qj} = h_p)}\right] \\
+%	&=  E_m[w] + (n_1 - 2) E_u[w] \\
+%	&> n_1 - 1.
+%\end{align*}
+%Thus, when $\Delta_{q^{*}j} = 1$, we have $p_{\text{fabl}} < p_{\text{fastLink}}$ for all records $i \neq q^{*}$.
+%
+%This result makes intuitive sense. When there is a match, a bunch of the probability mass goes towards that one record. Since probabilities under fabl get normalized to sum to 1, the probability mass for nonmatching record pairs gets shrunked towards zero. 
+%
+%\section{Estimated $m$ and $u$ Parameters}
+%
+%Working from the same $m$ and $u$, we just showed that the standard FS model and fabl will produce different estimates for the posterior probability. Of course, this must have an effect on the estimated $m$ and $u$ parameters for each model. I have not worked through all of this yet, but some brief thoughts: 
+%
+%Let $\hat{m}_{\text{fabl}}$ and $\hat{m}_{\text{fastLink}}$ denote the fitted estimates of the $m$ parameters under fabl and fastLink respectively (with analogous notation for $u$). It is now obvious that $E_{u_{\text{fabl}}}[w] = E_{u_{\text{fastLink}}}[w] = 1$. I have a hunch that when the model assumptions are correct, we would have $E_{\hat{m}_{\text{fastLink}}}[w] \leq E_{\hat{m}_{\text{fabl}}}[w]$.
+%
+%Furthermore, instead of thinking about the likelihood ratios $w$, it might be interesting to think for the implications for the KL divergence. In our context, this would be defined as 
+%$$D_{KL}(m ||u) = \sum_{p=1}^p m_p \log\left(\frac{m_p}{u_p}\right)$$.
+%Note the similarity to the definition of $E_u[w]$. 
+%
+%I have a hunch that we could prove $D_{KL}(\hat{m}_{\text{fastLink}}||\hat{u}_{\text{fastLink}}) \leq D_{KL}(\hat{m}_{\text{fabl}}||\hat{u}_{\text{fabl}})$. This would be a rather strong claim about the benefits of the fabl framework over standard Fellegi Sunter. 
+%
+%Also, in our similutation studies, we could even produce 95\% credible intervals for the KL divergence. I think that could be something new and interesting. 
+
+
+\bibliographystyle{jasa}
+\bibliography{biblio}
+
+
+\end{document}

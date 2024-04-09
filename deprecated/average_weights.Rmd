@@ -1,0 +1,80 @@
+---
+title: "average_weights"
+output: html_document
+date: "2024-04-04"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+devtools::load_all()
+```
+
+```{r}
+n1 <- 500 # target
+n2 <- 500 # base
+overlap <- n2/2
+S = 100
+burn = S * .1
+
+m <- rep(c(.95, .05), 5)
+u <- c(.01, .99, .01, .99,
+       1/30, 1- 1/30, 1/12, 1 - 1/12, 1/15, 1 - 1/15)
+ratios <- log(m/u)
+
+levels <- rep(2, 5)
+cd <- simulate_comparisons(m, u, levels, n1, n2, overlap)
+hash <- hash_comparisons(cd)
+
+unique_weights <- sweep(hash$ohe, MARGIN = 2, STAT = ratios, FUN = "*") %>%
+      rowSums() %>%
+      exp()
+
+unique_u <- sweep(hash$ohe, MARGIN = 2, STAT = log(u), FUN = "*") %>%
+      rowSums() %>%
+      exp()
+
+unique_m <- sweep(hash$ohe, MARGIN = 2, STAT = log(m), FUN = "*") %>%
+      rowSums() %>%
+      exp()
+
+
+e_u <- unique_weights %*% unique_u
+e_m <- unique_weights %*% unique_m
+KL <- log(unique_weights) %*% unique_m # True
+#Could look at credible intervals for the KL divergence. 
+
+weights <- sweep(cd$comparisons, MARGIN = 2, STAT = ratios, FUN = "*") %>%
+      rowSums() %>%
+      exp()
+
+m_p <- sweep(cd$comparisons, MARGIN = 2, STAT = log(m), FUN = "*") %>%
+      rowSums() %>%
+      exp()
+
+u_p <- sweep(cd$comparisons, MARGIN = 2, STAT = log(u), FUN = "*") %>%
+      rowSums() %>%
+      exp()
+
+ids <- expand.grid(1:n1, 1:n2)
+df <- data.frame(weights = weights, 
+                 target_id = ids[, 1], 
+                 base_id = ids[, 2]) %>% 
+  mutate(match = target_id == base_id & target_id <= overlap) %>% 
+  mutate(log_ratio <- log(weights))
+
+df %>% 
+  filter(match == 1) %>% 
+  summarize(avg = mean(weights))
+
+
+averages <- df %>% 
+  group_by(base_id) %>% 
+  summarize(avg = sum(weights))
+
+mean(averages$avg)
+
+hash$ohe %>% 
+  colSums()
+dim(hash$ohe)
+```
+

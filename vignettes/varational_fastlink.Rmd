@@ -1,0 +1,81 @@
+---
+title: "fabl_with_duplicates"
+output: html_document
+date: "2024-03-29"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load Functions
+
+```{r}
+devtools::load_all()
+```
+
+## Simulate Comparison Data
+
+With this specification, 20 records in $X_2$ have matches in $X_1$. Of those 20, 10 have two matches. Of those 10, 5 have 3 matches. And of those 5, one has 4 matches. 
+
+```{r}
+n1 <- 1000 # target
+n2 <- 1000 # base
+overlap <- 500
+S = 100
+burn = S * .1
+
+m <- rep(c(.95, .05), 5)
+u <- c(.01, .99, .01, .99,
+       1/30, 1- 1/30, 1/12, 1 - 1/12, 1/15, 1 - 1/15)
+
+levels <- rep(2, 5)
+cd <- simulate_comparisons(m, u, levels, n1, n2, overlap)
+hash <- hash_comparisons(cd, all_patterns = F)
+```
+
+There are two approaches to doing record linkage here through fabl. 
+
+## Swap databases and run standard fabl
+
+The first method we label the databases such that $X_2$ is the file with duplicates. We then run standard `fabl`. 
+
+```{r}
+cd_swapped <- swap_base_file(cd)
+
+hash_swapped <- hash_comparisons(cd_swapped)
+out_swapped <- fabl(hash_swapped)
+```
+Works exactly as we would hope. 
+
+```{r}
+estimate_links(out_swapped, hash_swapped, resolve = F)$Z_hat
+```
+
+This clearly works under the vabl framework as well
+```{r}
+out_vabl <- vabl(hash_swapped)
+estimate_links(out_vabl, hash_swapped, resolve = F)$Z_hat
+
+```
+
+## Multiple Match Prior
+
+Another approach is to keep the file that contains duplicates as $X_1$ and use a modified prior on $\pi$ to account for multiple matches. Essentially, we are using stick prior on a potentially infinitely many parameters 
+$$\tau_k = p(\text{record } j \in X_2 \text{ has a } k^{th} \text{ match in } X_1| \text{record } j \in X_2 \text{ has at least } k - 1 \text{ matches}).$$
+
+The single vector representation for the matches no longer works, but I can still easily find the matches. 
+
+```{r}
+out_mm <- fabl_mm_2(hash_mm)
+result <- estimate_links_mm(out_mm, hash_mm, resolve = F)
+result$Z_hat
+```
+
+# Comparison
+
+When we know that only one file has duplicates, both approaches are decent options. We could do experiments to test which approach is more accuate, if there is any difference at all.
+
+However, the first approach is amenable to `vabl`, which is probably more desireable in practice. 
+
+In the other document, I look at how the multiple match approach can be used in situations where both files have duplications. 

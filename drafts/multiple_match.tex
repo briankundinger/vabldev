@@ -1,0 +1,167 @@
+\documentclass[12pt,letterpaper]{article}
+
+\usepackage[hypertexnames=false]{hyperref}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{enumerate}
+\usepackage{natbib}
+
+% Custom packages
+\usepackage{amssymb}
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{algorithm}      % algorithm environment
+\usepackage{algpseudocode}
+\usepackage{multirow}
+\usepackage{sectsty}
+\usepackage{tabularx}
+\usepackage{tikz}           % vector graphics
+\usepackage{bm}             % bold math symbols
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{import}
+\usepackage{titling}
+\usepackage{natbib}
+\usetikzlibrary{arrows, backgrounds, patterns, matrix, shapes, fit, 
+  calc, shadows, plotmarks}
+
+
+% Custom commands
+\let\oldvec\vec
+\renewcommand\vec{\bm}
+\newcommand{\simfn}{\mathtt{sim}} % similarity function
+\newcommand{\truncsimfn}{\underline{\simfn}} % truncated similarity function
+\newcommand{\blockfn}{\mathtt{BlockFn}} % blocking function
+\newcommand{\distfn}{\mathtt{dist}} % distance function
+\newcommand{\valset}{\mathcal{V}} % attribute value set
+\newcommand{\entset}{\mathcal{R}} % set of records that make up an entity
+\newcommand{\partset}{\mathcal{E}} % set of entities that make up a partition
+\newcommand{\1}[1]{\mathbb{I}\!\left[#1\right]} % indicator function
+\newcommand{\euler}{\mathrm{e}} % Euler's constant
+\newcommand{\dblink}{\texttt{\upshape \lowercase{d-blink}}} % Name of scalable Bayesian ER model
+\newcommand{\blink}{\texttt{\upshape \lowercase{blink}}} % Name of original Bayesian ER model
+\def\spacingset#1{\renewcommand{\baselinestretch}%
+  {#1}\small\normalsize} \spacingset{1}
+
+\newtheorem{remark}{Remark}
+\newtheorem{proposition}{Proposition}
+\newtheorem{definition}{Definition}
+\newtheorem{lemma}{Lemma}
+
+% DON'T change margins - should be 1 inch all around.
+\addtolength{\oddsidemargin}{-.5in}%
+\addtolength{\evensidemargin}{-.5in}%
+\addtolength{\textwidth}{1in}%
+\addtolength{\textheight}{1.3in}%
+\addtolength{\topmargin}{-.8in}%
+
+\sectionfont{\large\nohang\centering\MakeUppercase}
+
+\title{Multiple Match}
+\author{Brian Kundinger}
+
+\begin{document}
+\maketitle
+
+\bigskip
+\begin{abstract}
+Abstract
+\end{abstract}
+
+\newpage
+\spacingset{1.5}
+
+\section{Introduction}
+
+%There have been several other attempts to estimate more flexible linkage structures within the comparison vector framework, but each has significant drawbacks in practice. First, the original \cite{fellegi_theory_1969} method that models the linkage status of each record pair as independent typically results in one record in one file being matched with multiple records in the other file. This initial estimate of the linkage structure is usually refined through post-processing to create a bipartite matching \cite{jaro1989}. As of yet, this post-processing has not been adapted to estimate more general linkage structures, and the initial estimate without any post-processing is known to have poor precision. \cite{aleshinguendel2021multifile} allowed for multiple matches within and across datafiles, but requires that the modeller explicitly set a maximum linkage cluster size, and models the dependency between records in such a way that limits scalability. \cite{zanella_flexible_2016} used nonparametric priors for the number of unique entities in a record linkage task, and showed that this doesn't work. TODO.
+
+%In contrast, we propose a nonparametric distribution for the number of matches that each record in one datafile has in the other datafile. In SECTION, we introduce this approach as an extension  of \texttt{fabl} method, and in SECTION, show how it can be adopted within the \texttt{vabl} framework as well. We demonstrate the effectiveness of this method through several simulations and case studies. 
+
+\section{Multiple Match}
+
+We can allow each record in $B$ to match to multiple records in $A$ through a Dirichlet process prior. Define a vector of probabilities $\bm{\pi} = (\pi_0, \ldots)$ where $\pi_k$ is the probability that some record in $B$ has exactly $k$ matches in $A$. We can model each $\pi_k$ as a product of conditional probabilities: let $\tau_k$ be the probability that some record in $B$ has at least $k$ matches, given that it has at least $k-1$ matches. This gives us the stick breaking representation
+\begin{align}
+	\pi_k = (1 - \tau_{k+1}) \prod_{c=1}^{k} \tau_c, 
+\end{align}
+where $\tau_k$ are independent random variables from a $\text{Beta}(1, \alpha_{\tau})$ distribution. 
+%Below, we explain how this prior is implemented in the MCMC and variational inference frameworks, and the computational considerations relevant to each. 
+%MAKE MORE FORMAL.
+
+\subsection{MCMC}
+We provide updated notation to allow us to describe one record in $B$ having multiple matches in $A$. Let $Z_j$ be a vector containing the indices for all of the records in $A$ that are a match with record $B_j$. Let $|Z_j| = \sum_{k=1}^{\infty} Z_j^k > 0$ denote the number of links associated with record $B_j$. Through MCMC, we are able to sequentially sample the components $Z_j^k$ of the matching vector $Z_j$. In this context, we propose the sequence of priors
+\begin{align}
+	p(Z_j^k|\tau_k) &= \begin{cases}
+		\frac{\tau_k}{n_j^k}, &  z_j^k \in N_j^k, \\
+		1 - \tau_k, & z_j = 0;
+		\end{cases} \\
+	\tau^k &\sim \text{Beta}(\alpha_{\tau^k}, \beta_{\tau^k})
+\end{align}
+where $N_j^k$ is the set of records in $A$ that are available to be matched with $B_j$, and $n_j^k = |N_j^k| = n_1 - (k - 1)$ is the number of such records. 
+
+This sequence of priors leads to the sequence of posteriors
+\begin{align}
+	p(Z_j^k|\tau, m, u, \gamma) &= \begin{cases}
+		w_{ij}, &z_j^k \in N_j^k, \\
+		n_j^k \frac{1 - \tau^k}{\tau^k}, & z_j = 0;
+	\end{cases} \\
+	\tau^k &\sim \text{Beta}(\alpha_{\tau^k} + n_k(\bm{Z}), \beta_{\tau^k} + n_{k-1}(\bm{Z}) - n_k(\bm{Z}))
+\end{align}
+where $n_k(\bm{Z}) = \sum_{j=1}^{n_B} I( |Z_j| \geq k)$ is the number of records in $B$ that have at least $k$ matches in $A$. Note that $n_0(\bm{Z}) = n_B$, and that for each $k$, we can view $n_{k-1}{\bm{Z}}$ as a number of trials, and $n_{k}{\bm{Z}}$ as a number of successes. 
+
+This specification induces an extension of \texttt{fabl} with an iterative matching phase. In each iteration of the Gibbs sampler, we sample an initial set of links using $\tau_1$. For each record in $B$ that was found to have a link, we remove the linked record in $A$ from consideration, and then sample another potential link with $\tau_2$. We continue, using $\tau_k$ in the $k^{th}$ matching step, until no new links are found, at which we point the matching phase terminates. The $\bm{\tau}, \bm{m},$ and $\bm{u}$ parameters are estimated based on all of the links identified. Crucially, there is no need to specify a maximum number of links per record, as this estimated through the model.
+
+\subsection{Variational Inference}
+There are several reasons why this prior would not be practical through variational inference.
+\begin{itemize}
+	\item Through MCMC, we can sequentially sample all plausible matches for record $B_j$. In variational inference however, we need to estimate the match probability for the joint distribution of ever possible combination of matches. 
+	\item Without hashing, the number of possible combinations is $n_1 \choose k$. With hashing, this number is $P^k / k!$ (I think), and would still require some operations at the scale of $n_1 \choose k$ when conducting the actual hashing.
+	\item However, this approach might work if using aggressive indexing/filtering.  
+\end{itemize}
+Despite this drawback, I think multiple match might still be useful. In cases where we know at least one file is duplicate free, we can safely use \texttt{vabl}. However, if we want to be cautious about the potential for duplicates, the multiple match prior under \texttt{fabl} is a good option. 
+
+\subsection{Comparison to Base Fellegi-Sunter}
+\begin{itemize}
+	\item At the point at which we allow for duplication within and across datasets, one might ask why we don't just use the independent record pair assumption of base Fellegi Sunter
+	\item We have found that standard FS (and its implementation in fastlink) tends to overmatch. It generally attains comparable precision to BRL/fabl once you use the Jaro post-processing algorithm to obtain a one-to-one matching
+	\item In this setting, we do not want a one-to-one matching, so we need to take the raw output of FS
+	\item Conceptually, one could modify the Jaro algorithm to allow for one-to-$K$ matchings. However, this would take some work, and it would have the downside of having to prespecify $K$. 
+\end{itemize}
+
+\subsection{Another thought about Fellegi Sunter (not directly related)}
+
+It seems to me that base Fellegi Sunter is bound to have a higher false positive rate as the size of the problem grows.
+
+\begin{itemize}
+	\item Assuming there are at maximum $K$ records in $A$ that match with record $j \in B$. For one to one matching, this means $K = 1$.
+	\item There are at least $n_A - K$ nonmatching record pairs for each $j \in B$
+	\item If we're making $n_A n_B$ independent classification decisions it just seems intuitive that we would get more false positives as $(n_A - K) n_B$ grows. 
+	\item It also seems intuitive that we would tend to see less false positives when we can only make at most $n_B$ classification decisions. 
+\end{itemize}
+A possible approach: In FS a record pair gets classified as a match if it has an appropriately high $w_{ij}$. But in fabl, you need to have the high $w_{ij}$, and no other  $w_{i'j}$ can be greater. This might be tangible place to start?
+
+Does that make sense? Does it seem possible to prove rigorously? Have you thought about this before?
+
+If we could do this, it would give a nice theoretical justification for using the fabl framework over base FS (or practically, using vabl over fastLink). 
+
+\subsection{Computational Considerations}
+We can set the maximum number of linkages per record, $K$, or let it be estimated by the model. Setting it ahead of time gives a minor (I would say, negligible) computational advantage over leaving it unrestricted. 
+
+Let $L_k^{(s)}$ be the number of records in $B$ with at least $k$ links in $A$ during iteration $s$ of the Gibbs sampler. Note that $L_0 = n_B$ and $L_1 = n_{12}(Z^{(s)})$ when conducting single matching. The computational complexity of multiple match using MCMC is $\mathcal{O} \left(P \sum_{k=0}^K L_k\right)$.
+
+When $X_1$ is free of duplicates, the multiple match algorithm makes a second attempt at matching, which has complexity $ \left(P L_1 \right)$. This is a minor addition of computation time, but gives the added security of identifying duplicates. It may be a nice option just to use when you're not sure!
+
+\section{Simulations}
+\begin{itemize}
+	\item Show accuracy under various settings of maximum cluster size. Recall will fall very quickly for fabl. Multilink may be very dependent on correctly specifying $K$. 
+\end{itemize}
+\section{Case Studies}
+\begin{itemize}
+	\item Provide an example of record pairs that fabl cannot identify as matches because of duplication. I know there are cases in NCVR.
+\end{itemize}
+\bibliographystyle{jasa}
+\bibliography{biblio}
+
+\section{Appendix}
+\label{sec:appendix}
+
+
+\end{document}

@@ -1,81 +1,46 @@
 #' @export
 #'
-estimate_links<- function(out, hash, l_FNM=1, l_FM1=1, l_FM2=2, l_R=Inf,
-                          nonmatch_label = "zero", resolve = T){
+estimate_links_fl <- function(out, hash, l_FNM=1, l_FM1=1, l_FM2=2, l_R=Inf,
+                              nonmatch_label = "zero", resolve = T){
   # "out" can be the output from either fabl or vabl.
 
   n1 <- hash$n1
   n2 <- hash$n2
-  params_fields <- NULL
-  params_patterns <- NULL
+  fs_probs <- out$fs_probs
+  pattern_weights <- out$pattern_weights
 
+  ids <- expand.grid(1:n1, 1:n2)
+  all_probs <- data.frame(id_1 = ids[, 1],
+                   id_2 = ids[, 2],
+                   pattern = as.integer(hash$hash_id),
+                   fs_prob = fs_probs[hash$hash_id],
+                   weight = pattern_weights[hash$hash_id]) %>%
+    group_by(id_2) %>%
+    mutate(vabl_est = weight / (sum(weight) + 1))
 
-  if(names(out)[1] == "Z"){
-    Z_samps <- out$Z
+  total_match_prob <- all_probs %>%
+    group_by(id_2) %>%
+    summarize(matching_prob = sum(vabl_est)) %>%
+    pull()
 
-    #Z_samps[Z_samps > n1+1] <- n1+1
+  prob_no_link <- 1 - total_match_prob
 
-    samps <- ncol(Z_samps)
-    probs <- apply(Z_samps, 1, function(x){
-      table(x)/samps
-    }, simplify = F)
-    prob_no_link <- sapply(probs, function(x){
-      1 - sum(x[names(x) != n1 + 1])
-    })
-    # prob_no_link <- sapply(probs, function(x){
-    #   1 - sum(x[names(x) != 0])
-    # })
-    Z_hat <- rep(0, n2)
-    best_match <- sapply(probs, function(x){
-      names(which.max(x))
-    }) %>%
-      as.numeric()
-    prob_best_match <- sapply(probs, function(x){
-      max(x)
-    })
-    link_indicator <- best_match < n1 + 1
-    all_probs <- NULL
-  }
+  no_link_df <- data.frame(id_1 = 0, id_2 = 1:n2,
+                           pattern = 0,
+                           weight = 1,
+                           vabl_est = prob_no_link)
 
-  if(names(out)[1] == "pattern_weights"){
+  complete_df <- rbind(all_probs, no_link_df) %>%
+    arrange(id_2, id_1)
 
-    n2 <- hash$n2
-    pattern_probs <- lapply(1:n2, function(j){
-      out$pattern_weights/out$C[j]
-    })
+  Zhat_df <- complete_df %>%
+    group_by(id_2) %>%
+    filter(vabl_est == max(vabl_est)) %>%
+    filter(!duplicated(id_2)) # eliminates ties in vabl_est, ensures nrow == n2
 
-    possible_records <- lapply(1:n2, function(j){
-      record <- c(hash$flags[[j]]$eligible_records, 0)
-      prob <- c(pattern_probs[[j]][hash$flags[[j]]$eligible_patterns],
-                exp(digamma(out$b_pi)) / out$C[j]) %>%
-        unname()
-
-      data.frame(record, prob)
-    })
-
-    max_prob <- lapply(possible_records, function(x){
-      x[which.max(x$prob), ]
-    }) %>%
-      do.call(rbind, .)
-
-    best_match <- max_prob$record
-    prob_best_match <- max_prob$prob
-    prob_no_link <- out$b_pi/out$C
-    link_indicator <- best_match > 0
-
-    ids <- expand.grid(1:n1, 1:n2)
-    complete_df <- data.frame(id_1 = ids[, 1],
-                     id_2 = ids[, 2],
-                     pattern = as.integer(hash$hash_id),
-                     weight = out$pattern_weights[hash$hash_id]) %>%
-      group_by(id_2) %>%
-      rbind(., data.frame(id_1 = 0,
-                          id_2 = 1:n2,
-                          pattern = 0,
-                          weight = out$b_pi)) %>%
-      arrange(id_2, id_1) %>%
-      mutate(prob = weight / (sum(weight)))
-  }
+  best_match <- Zhat_df$id_1
+  prob_best_match <- Zhat_df$vabl_est
+  link_indicator <- best_match > 0
 
   if(l_R == Inf){# if not using reject option and conditions of Theorem 1
 
@@ -133,7 +98,6 @@ estimate_links<- function(out, hash, l_FNM=1, l_FM1=1, l_FM2=2, l_R=Inf,
     }
   }
 
-  if(names(out)[1] == "pattern_weights"){
   field_marker <- hash$field_marker
 
   m <- split(out$a, hash$field_marker) %>%
@@ -169,11 +133,19 @@ estimate_links<- function(out, hash, l_FNM=1, l_FM1=1, l_FM2=2, l_R=Inf,
                           w_p = w_p,
                           E_m = E_m,
                           KL = KL)
-  }
+
+  fs <- jaro(complete_df)
+
+
+
+
+
 
   return(list(Z_hat = Z_hat,
               prob = prob_best_match,
               all_probs = complete_df,
               params_fields = params_fields,
-              params_patterns = params_patterns))
+              params_patterns = params_patterns,
+              Z_hat_jaro = fs$Z_hat,
+              fs_linkages = fs$fs_no_jaro))
 }

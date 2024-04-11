@@ -1,7 +1,7 @@
 #' @export
 #'
 
-variational_fastlink <- function(hash, threshold = 1e-6, tmax = 1000, fixed_iterations = NULL,
+variational_fastlink <- function(hash, threshold = 1e-6, tmax = 200, fixed_iterations = NULL,
                            b_init = TRUE, check_every = 10, store_every = check_every){
 
   ohe <- hash$ohe
@@ -28,7 +28,7 @@ variational_fastlink <- function(hash, threshold = 1e-6, tmax = 1000, fixed_iter
     b = rep(1, length(field_marker))
   }
     a_lambda <- 1
-    b_lambda <- n1*n2
+    b_lambda <- n1*n2 - 1 #initialize towards nonmatching, faster convergence
 
   t <- 1
   ratio <- 1
@@ -67,7 +67,6 @@ variational_fastlink <- function(hash, threshold = 1e-6, tmax = 1000, fixed_iter
 
     matching_weight_by_pattern <- hash$total_counts * phi
     total_match <- sum(matching_weight_by_pattern)
-
 
     AZ <- ohe %>%
       sweep(., 1, matching_weight_by_pattern, "*") %>%
@@ -128,7 +127,7 @@ variational_fastlink <- function(hash, threshold = 1e-6, tmax = 1000, fixed_iter
 
     t <- t + 1
     if(t > tmax){
-      print("Max iterations have passed before convergence")
+      #print("Max iterations have passed before convergence")
       break
     }
 
@@ -141,7 +140,8 @@ variational_fastlink <- function(hash, threshold = 1e-6, tmax = 1000, fixed_iter
 
   }
 
-  list(pattern_weights = phi,
+  list(fs_probs = phi,
+       pattern_weights = phi_tilde,
        a = a,
        b = b,
        a_lambda = a_lambda,

@@ -1,7 +1,7 @@
 #' @export
 #'
 hash_comparisons <- function(cd,
-         algorithm = c("vabl", "fabl", "BRL_hash"), R = 0,
+         algorithm = c("vabl", "fabl", "BRL_hash", "fastLink"), R = 0,
          all_patterns = FALSE, store_pair_to_pattern = TRUE){
 
 
@@ -147,7 +147,9 @@ hash_comparisons <- function(cd,
     hash_to_file_1 <- NULL
   }
 
-
+  if(!("fastLink" %in% algorithm)){
+    hash_id <- NULL
+  }
 
 
   patterns <- list(ohe = unique_patterns,
@@ -160,7 +162,8 @@ hash_comparisons <- function(cd,
                    field_marker = field_marker,
                    n1 = n1,
                    n2 = n2,
-                   pair_to_pattern = pair_to_pattern)
+                   pair_to_pattern = pair_to_pattern,
+                   hash_id = hash_id)
   patterns
 
 }

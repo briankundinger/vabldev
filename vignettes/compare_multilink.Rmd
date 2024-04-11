@@ -134,7 +134,7 @@ cd_multilink <- multilink::create_comparison_data(all_records,
                                   file_sizes = c(n1, n2), 
                                   duplicates = c(1, 1), 
                                   verbose = T)
-prior <- multilink::specify_prior(cd_multilink)
+prior <- multilink::specify_prior(cd_multilink, )
 
 chain_multilink <- multilink::gibbs_sampler(cd_multilink, prior, n_iter = S)
 result_ML <- multilink::find_bayes_estimate(chain_multilink$partitions, burn)

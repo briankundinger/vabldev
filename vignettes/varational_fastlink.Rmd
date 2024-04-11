@@ -16,7 +16,7 @@ devtools::load_all()
 
 ## Variational FastLink vs vabl
 
-The discrepancy between fastlink and fabl seems to be more pronounced when there are more matches. This makes sense, because more shrinkage is occuring. 
+
 ```{r}
 n1 <- 1000 # target
 n2 <- 1000 # base
@@ -39,14 +39,9 @@ out_vabl <- vabl(hash)
 estimate_vabl <- estimate_links(out_vabl, hash)
 eval_vabl <- evaluate_links(estimate_vabl$Z_hat, cd$Z_true, n1)
 
-KL_fs <- estimate_fl$params_patterns$KL
-KL_vabl <- estimate_vabl$params_patterns$KL
-
 list(fs_jaro = eval_fs_jaro, 
      fs_normalization = eval_fs_normalization, 
-     vabl = eval_fs_jaro, 
-     KL_fs = KL_fs, 
-     KL_vabl = KL_vabl)
+     vabl = eval_fs_jaro)
 ```
 
 

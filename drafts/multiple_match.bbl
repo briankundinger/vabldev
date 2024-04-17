@@ -1,0 +1,19 @@
+\begin{thebibliography}{xx}
+
+\harvarditem{Aleshin-Guendel \harvardand\
+  Sadinle}{2023}{aleshinguendel2021multifile}
+Aleshin-Guendel, S. \harvardand\ Sadinle, M.  \harvardyearleft
+  2023\harvardyearright , `Multifile partitioning for record linkage and
+  duplicate detection', {\em Journal of the American Statistical Association}
+  {\bf 0}(0),~1--10.
+\newline\harvardurl{https://doi.org/10.1080/01621459.2021.2013242}
+
+\harvarditem[Marchant et~al.]{Marchant, Kaplan, Elazar, Rubinstein \harvardand\
+  Steorts}{2021}{marchant_distributed_2019}
+Marchant, N.~G., Kaplan, A., Elazar, D.~N., Rubinstein, B. I.~P. \harvardand\
+  Steorts, R.~C.  \harvardyearleft 2021\harvardyearright , `d-blink:
+  Distributed end-to-end bayesian entity resolution', {\em Journal of
+  Computational and Graphical Statistics} {\bf 30}(2),~406--421.
+\newline\harvardurl{https://doi.org/10.1080/10618600.2020.1825451}
+
+\end{thebibliography}

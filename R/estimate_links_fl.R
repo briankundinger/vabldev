@@ -16,7 +16,8 @@ estimate_links_fl <- function(out, hash, l_FNM=1, l_FM1=1, l_FM2=2, l_R=Inf,
                    fs_prob = fs_probs[hash$hash_id],
                    weight = pattern_weights[hash$hash_id]) %>%
     group_by(id_2) %>%
-    mutate(vabl_est = weight / (sum(weight) + 1))
+    #mutate(vabl_est = weight / (sum(weight) + 1))
+    mutate(vabl_est = weight / (sum(weight) + exp(digamma(out$b_lambda/n1)) + log(n1)))
 
   total_match_prob <- all_probs %>%
     group_by(id_2) %>%

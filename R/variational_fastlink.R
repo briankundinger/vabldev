@@ -62,8 +62,8 @@ variational_fastlink <- function(hash, threshold = 1e-6, tmax = 200, fixed_itera
     weights = m_p - u_p
 
     # phi_single
-    phi_tilde <- exp(digamma(a_lambda) - digamma(b_lambda) + weights)
-    phi <- phi_tilde/ (phi_tilde + 1)
+    phi_tilde <- exp(digamma(a_lambda)  + weights)
+    phi <- phi_tilde/ (phi_tilde + exp(digamma(b_lambda)))
 
     matching_weight_by_pattern <- hash$total_counts * phi
     total_match <- sum(matching_weight_by_pattern)

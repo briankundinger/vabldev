@@ -20,7 +20,7 @@ devtools::load_all()
 ```{r}
 n1 <- 1000 # target
 n2 <- 1000 # base
-overlap <- n1 * .9 #for more shrinkage
+overlap <- n1 * .1 #for more shrinkage
 
 m <- rep(c(.95, .05), 5)
 u <- c(.01, .99, .01, .99,

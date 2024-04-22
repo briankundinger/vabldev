@@ -69,12 +69,8 @@
 
 estimate_links_mm <- function(out, hash, lFNM=1, lFM1=1, lFM2=2, lR=Inf,
                               resolve = T){
-  #
-  # This is a complete copy of "linkrecords" from BRL, only modified
-  # so that it passes on the posterior link probabilities
-  #
-  #
-  #
+
+  threshold <- 1/2
 
   # control the input
   #if(!is.matrix(Z_samps)) stop("Z_samps should be a matrix")
@@ -120,6 +116,7 @@ estimate_links_mm <- function(out, hash, lFNM=1, lFM1=1, lFM2=2, lR=Inf,
     do.call(rbind, .) %>%
     rename(target_id = x,
            prob = Freq) %>%
+    mutate(target_id = as.numeric(as.character(target_id))) %>%
     relocate(base_id, .before = prob) %>%
     #mutate(target_id = as.integer(target_id)) %>%
     filter(prob > threshold) %>%

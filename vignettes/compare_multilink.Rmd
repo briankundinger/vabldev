@@ -18,7 +18,7 @@ library(stringr)
 We modify one of the Sadinle simulation files, introducing duplications in both datasets. 
 
 ```{r}
-i = 1
+i = 250
 all_patterns <- F
 S = 100 # Small S just to make things run faster 
 burn = S * .1
@@ -43,6 +43,12 @@ n2 <- 500
 
 # Ztrue <- rep(0, n2)
 # Ztrue[1:overlap] <- 1:overlap
+# Ztrue[(overlap +1):(2*overlap)] <- 1:overlap
+# Ztrue_pairs <- cbind(Ztrue, 1:n2)
+
+Ztrue_pairs <- data.frame(id_1 = 1:(2*overlap), 
+                          id_2 = rep(1:overlap, 2)) %>% 
+  arrange(id_2)
 
 file1 <- records %>%
   filter(file ==1,
@@ -62,19 +68,92 @@ copy_index <- 1:overlap
 paste_index <- (overlap +1):(2*overlap)
 
 file1[paste_index, ] <- file1[copy_index, ]
-file1 <- file1 %>% 
-  arrange(rec_id) %>% 
-  select(-rec_id)
+# file2[paste_index, ] <- file2[copy_index, ]
 
-file2[paste_index, ] <- file2[copy_index, ]
-file2 <- file2 %>% 
-  arrange(rec_id) %>% 
-  select(-rec_id)
+# file1 <- file1 %>% 
+#   arrange(rec_id) %>% 
+#   select(-rec_id)
+# file2 <- file2 %>% 
+#   arrange(rec_id) %>% 
+#   select(-rec_id)
 
-cd <- compare_records(file1, file2, c(2, 3, 5, 6),
+cd <- compare_records(file1, file2, c(2, 3, 5, 6) + 1,
                         types = c("lv", "lv", "bi", "bi"))
 
-hash <- hash_comparisons(cd, all_patterns, algorithm = c("vabl", "fabl", "brl"))
+hash <- hash_comparisons(cd)
+```
+
+
+
+# Multiple Match Approach
+
+In this setting, the multiple match approach seems to work well. 
+
+```{r}
+out_mm <- fabl_mm(hash, S = S, burn = burn)
+result_mm <- estimate_links_mm(out_mm, hash, resolve = F)
+Z_hat <- cbind(result_mm$Z_hat$target_id, result_mm$Z_hat$base_id)
+evaluate_links(Z_hat, Ztrue_pairs, n1, "pairs")
+
+
+
+```
+# Variational Fastlink
+
+```{r}
+out_fl <- variational_fastlink(hash)
+estimate_fl <- estimate_links_fl(out_fl, hash)
+Z_hat <- data.frame(id_1 = estimate_fl$fs_linkages$a,
+                    id_2 = estimate_fl$fs_linkages$b)
+evaluate_links(Z_hat, Ztrue_pairs, n1, "pairs")
+```
+
+
+
+# Multilink
+
+Very sensitive to "maximum cluster size" parameter.
+```{r}
+
+all_records <- rbind(file1, file2)[, c(2, 3, 5, 6) + 1]
+all_records$occup <- as.character(all_records$occup)
+cd_multilink <- multilink::create_comparison_data(all_records, 
+                                  types = c("lv", "lv", "bi", "bi"), 
+                                  breaks = list(c(0, .25, .5), 
+                                                c(0, .25, .5), 
+                                                NA, 
+                                                NA), 
+                                  file_sizes = c(n1, n2), 
+                                  duplicates = c(1, 0), 
+                                  verbose = T)
+prior <- multilink::specify_prior(cd_multilink, NA, NA, 0,
+                                  NA, c(5, 1), NA, list(1, 1), NA, NA)
+
+chain_multilink <- multilink::gibbs_sampler(cd_multilink, prior, n_iter = S)
+result_ML <- multilink::find_bayes_estimate(chain_multilink$partitions, burn)
+
+cluster_labels <- unique(result_ML)
+
+df_1_clusters <- result_ML[1:500]
+df_2_clusters <- result_ML[501:1000]
+
+Z_list <- list()
+
+for(x in cluster_labels){
+  match1 <- which(df_1_clusters == x)
+  match2 <- which(df_2_clusters == x)
+  
+  if(length(match1) == 0 ||length(match2) == 0){
+    next
+  }
+  Z_list[[x]] <- data.frame(id_1 = match1, 
+             id_2 = match2)
+}
+
+Z_hat <- do.call(rbind, Z_list)
+
+evaluate_links(Z_hat, Ztrue_pairs, n1, "pairs")
+
 ```
 
 # Standard fabl
@@ -87,59 +166,3 @@ result <- estimate_links(out, hash, resolve = F)
 result$Z_hat
 
 ```
-
-# Multiple Match Approach
-
-In this setting, the multiple match approach seems to work well. 
-
-```{r}
-out_mm <- fabl_mm_2(hash, S = S, burn = burn)
-result_mm <- estimate_links_mm(out_mm, hash, resolve = F)
-result_mm$Z_hat
-
-```
-
-
-# FastLink
-
-At least in this example, standard Fellegi Sunter (as implemented in fastlink) tends to produce false positives. Note that we should not use the Jaro post-proccesing in this setting!
-
-```{r}
-out_fl <- fastLink::fastLink(file1, 
-                   file2, 
-                   varnames = names(file1)[c(2, 3, 5, 6)],
-                   stringdist.match = names(file1)[c(2, 3)], 
-                   partial.match = names(file1)[c(2, 3)],
-                   cut.a = 1, cut.p = .75, dedupe.matches = F, 
-                   threshold.match = .5) # comparable threshold
-
-# more false positives than fabl_mm
-data.frame(target_id = out_fl$matches$inds.a, 
-           base_id = out_fl$matches$inds.b)
-```
-
-# Multilink
-
-TBD, comparison with multilink.
-```{r}
-
-all_records <- rbind(file1, file2)[, c(2, 3, 5, 6)]
-all_records$occup <- as.character(all_records$occup)
-cd_multilink <- multilink::create_comparison_data(all_records, 
-                                  types = c("lv", "lv", "bi", "bi"), 
-                                  breaks = list(c(0, .25, .5), 
-                                                c(0, .25, .5), 
-                                                NA, 
-                                                NA), 
-                                  file_sizes = c(n1, n2), 
-                                  duplicates = c(1, 1), 
-                                  verbose = T)
-prior <- multilink::specify_prior(cd_multilink, )
-
-chain_multilink <- multilink::gibbs_sampler(cd_multilink, prior, n_iter = S)
-result_ML <- multilink::find_bayes_estimate(chain_multilink$partitions, burn)
-
-result_ML
-
-```
-

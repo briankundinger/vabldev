@@ -8,6 +8,7 @@ estimate_links<- function(out, hash, l_FNM=1, l_FM1=1, l_FM2=2, l_R=Inf,
   n2 <- hash$n2
   params_fields <- NULL
   params_patterns <- NULL
+  complete_df <- NULL
 
 
   if(names(out)[1] == "Z"){

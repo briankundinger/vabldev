@@ -25,33 +25,35 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
   hash_count_list <- hash$hash_count_list
   hash_to_file_1 <-hash$hash_to_file_1
 
-  nonmatch_df <- data.frame(id_2 = 1:n2,
-                            pattern = NA,
-                            count = 1)
+  # nonmatch_df <- data.frame(id_2 = 1:n2,
+  #                           pattern = NA,
+  #                           count = 1)
 
-  weight_df <- lapply(1:n2, function(x){
-    data.frame(id_2 = x,
-               pattern = factor(1:P),
-               count = hash_count_list[[x]])
-  }) %>%
-    do.call(rbind, .) %>%
-    mutate(rn = row_number())
+  # weight_df <- lapply(1:n2, function(x){
+  #   data.frame(id_2 = x,
+  #              pattern = factor(1:P),
+  #              count = hash_count_list[[x]])
+  # }) %>%
+  #   do.call(rbind, .) %>%
+  #   mutate(rn = row_number())
   #
   # %>%
   #   bind_rows(nonmatch_df) %>%
   #   mutate(rn = row_number())
 
-  candidates_P <- 1:(P+1)
+  candidates <- 0:P
   #Z_compact <- vector("list", S)
-  Z_list <- vector("list", S)
+  Z_samps <- vector("list", S)
 
   #Z.SAMPS <- matrix(NA, nrow = n2, ncol = S)
   m_samps <- matrix(NA, nrow = length(field_marker), ncol = S)
   u_samps <- matrix(NA, nrow = length(field_marker), ncol = S)
   n_possible_list <- list()
-  PI.SAMPS <- list()
+  L_list <- list()
+  pi_samps <- list()
   Z.temp <- rep(0, n1*n2)
-  Z <- rep(n1+1, n2)
+  #Z <- rep(n1+1, n2)
+  #Z <- matrix(n1 + 1, nrow = n2, ncol = 1)
   L <- 0
 
   m <- u <- rep(0, length(field_marker))
@@ -60,6 +62,7 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
 
   # Gibbs
   for(s in 1:S){
+
 
     AZ <- sweep(unique_patterns, MARGIN = 1, STAT = matches, FUN = "*") %>%
       colSums() %>%
@@ -92,80 +95,68 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
       rep(., P) %>%
       matrix(., nrow = P, byrow = TRUE)
 
-    # counts_list <- hash$pattern_hash_count_listord
     unique_weights <- exp(rowSums(ratio * unique_patterns, na.rm = TRUE))
-    # counts_long <- hash$pattern_hash_count_listord %>%
-    #   unlist
-    # weights_long <- exp(rowSums(ratio * unique_patterns, na.rm = TRUE)) %>%
-    #   rep(., n2)
-
-    weight_df$count <- hash$hash_count_list %>%
-      unlist()
-
-    k  = 1
-    #n_sampled_vec <- c()
+    hash_count_list <- hash$hash_count_list
+    hash_to_file_1 <- hash$hash_to_file_1
+    k <-  1
     pi_vec <- c()
     n_possible_vec <- n2
-    #n_possible <- n2
     matchable <- 1:n2
+    Z_pattern <- vector()
+    Z_samps[[s]] <- vector()
     removed_set <- c()
 
 
     while(TRUE){
       if(s == 1){
-        n_prior = 0
+        n_last_iter = 0
       } else if(length(n_possible_list[[s - 1]]) < k){
-        n_prior = 0
+        n_last_iter = 0
       } else {
-        n_prior <- n_possible_list[[s - 1]][k]
+        n_last_iter <- n_possible_list[[s - 1]][k]
+      }
+
+      # Z_pattern <- cbind(Z_pattern, rep(NA, n2))
+      # Z_samps[[s]] <- cbind(Z_samps[[s]], rep(NA, n2))
+
+      if(k == 1){
+      Z_pattern <- cbind(Z_pattern, rep(0, n2))
+      Z_samps[[s]] <- cbind(Z_samps[[s]], rep(0, n2))
+      } else {
+        Z_pattern <- cbind(Z_pattern, rep(NA, n2))
+        Z_samps[[s]] <- cbind(Z_samps[[s]], rep(NA, n2))
       }
 
       n_possible <- n_possible_vec[k]
-      n_prior <- min(n_possible, n_prior)
+      n_last_iter <- min(n_possible, n_last_iter)
 
-      pi <- rbeta(1, n_prior + alpha, n_possible - n_prior + beta)
-      offset <- (n1 - k + 1) * (1 - pi) / pi
+      pi <- rbeta(1, n_last_iter + alpha, n_possible - n_last_iter + beta)
+      hash_weights <- lapply(hash_count_list, function(x){
+        x * unique_weights
+      })
 
-      weight_split <- weight_df %>%
-        group_split(id_2)
+      # weight_split <- weight_df %>%
+      #   group_split(id_2)
 
-      sampled_rows <- sapply(matchable, function(x){
-        sample(c(0, weight_split[[x]]$rn),
-               1,
-               prob = c(1- pi, weight_split[[x]]$count * unique_weights * pi / (n1 - k)))
-      }) %>%
-        unname()
+      for(j in matchable){
+        Z_pattern[j, k] <- sample(candidates, 1,
+                       prob = c(1 - pi, hash_weights[[j]] * pi / n1))
+        if(Z_pattern[j, k] > 0){
+          hash_count_list[[j]][Z_pattern[j, k]] <- hash_count_list[[j]][Z_pattern[j, k]] - 1
+          index <- ceiling(runif(1) * length(hash_to_file_1[[j]][[Z_pattern[j, k]]]))
+          record <- hash_to_file_1[[j]][[Z_pattern[j, k]]][index]
+          hash_to_file_1[[j]][[Z_pattern[j, k]]] <- hash_to_file_1[[j]][[Z_pattern[j, k]]][hash_to_file_1[[j]][[Z_pattern[j, k]]] != record]
+          #L[k] <- L + 1
+          Z_samps[[s]][j, k] <- record
+        }
+      }
 
-      removed <- sampled_rows[sampled_rows > 0]
-
-      # sampled <- weight_df %>%
-      #   filter(id_2 %in% matchable) %>%
-      #   group_by(id_2) %>%
-      #   sample_n(1, weight = weights) %>%
-      #   ungroup() %>%
-      #   tidyr::complete(id_2 = 1:n2)
-
-      matchable <- weight_df %>%
-        filter(rn %in% removed) %>%
-        select(id_2) %>%
-        pull()
-
-      # removed <- weight_df %>%
-      #   filter(rn %in% matches) %>%
-      #   select(pattern) %>%
-      #   pull() %>%
-      #   as.integer
-
-      weight_df$count[removed] <- weight_df$count[removed] - 1
-
-
-      removed_set <- c(removed_set, removed)
+      matchable <- seq_len(n2)[is.element(Z_pattern[, k] > 0, T)]
       n_possible_vec <- c(n_possible_vec, length(matchable))
 
-      #n_sampled_vec <- c(n_sampled_vec, length(matchable))
       pi_vec <- c(pi_vec, pi)
 
-      k = k + 1
+      k <-  k + 1
 
       if(length(matchable) == 0){
         break
@@ -174,25 +165,12 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
     }
 
     n_possible_list[[s]] <- n_possible_vec[-1]
-    PI.SAMPS[[s]] <- pi_vec
+    pi_samps[[s]] <- pi_vec
 
-    Z_list[[s]] <- weight_df[removed_set, ] %>%
-      select(pattern, id_2) %>%
-      arrange(id_2, pattern)
-
-    # Z_compact[[s]] <- weight_df %>%
-    #   filter(rn %in% removed_set) %>%
-    #   tidyr::complete(id_2 = 1:n2) %>%
-    #   select(pattern, id_2) %>%
-    #   nest_by(id_2, .key = "pattern") %>%
-    #   ungroup() %>%
-    #   select(pattern)
-
-    matches <- weight_df$pattern[removed_set] %>%
-      data.frame(pattern = .) %>%
-      group_by(pattern, .drop = F) %>%
-      count() %>%
-      pull()
+    matches <- factor(Z_pattern, levels = 0:P) %>%
+      table() %>%
+      .[-1] %>%
+      unname()
 
     #Z.SAMPS[,s] <- Z
     m_samps[,s] <- m
@@ -206,51 +184,15 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
     }
   }
 
-  final_gibbs <- lapply(Z_list, function(y){
-    temp <- y %>%
-      group_by(id_2, pattern) %>%
-      count() %>%
-      ungroup() %>%
-      group_split(id_2)
-
-    rec_1 <- lapply(temp, function(w){
-      w %>%
-        group_split(pattern) %>%
-        lapply(., function(z){
-          sample_with_1(x = hash_to_file_1[[z$id_2]][[z$pattern]],
-                        size = z$n)
-        }) %>%
-        unlist()
-    }) %>%
-      unlist()
-
-    data.frame(id_1 = rec_1,
-               id_2 = y$id_2)
-
-    # %>%
-    #     tidyr::complete(id_2 = 1:n2) %>%
-    #     select(rec_1, id_2) %>%
-    #     nest_by(id_2, .key = "id_1") %>%
-    #     ungroup() %>%
-    #     select(id_1)
-  })
-  # %>%
-  #   do.call(cbind, .)
 
 
-
-  #final_gibbs <- final_gibbs[ ,-(1:burn)]
-
-  Z.SAMPS <- lapply((burn + 1):S, function(x){
-    final_gibbs[[x]]
-  })
+  Z_samps <- Z_samps[-(1:burn)]
   m_samps <- m_samps[ ,-(1:burn)]
   u_samps <- u_samps[ ,-(1:burn)]
 
-  # Format PI.SAMPS
+  # Format pi_samps
 
-  list(Z = Z.SAMPS,
-       #Z_list = Z_list,
+  list(Z = Z_samps,
        m = m_samps,
        u = u_samps)
 

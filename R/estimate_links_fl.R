@@ -1,13 +1,27 @@
 #' @export
 #'
 estimate_links_fl <- function(out, hash, l_FNM=1, l_FM1=1, l_FM2=2, l_R=Inf,
-                              nonmatch_label = "zero", resolve = T){
+                              nonmatch_label = "zero", resolve = T, flags_only = F){
   # "out" can be the output from either fabl or vabl.
 
   n1 <- hash$n1
   n2 <- hash$n2
   fs_probs <- out$fs_probs
   pattern_weights <- out$pattern_weights
+
+  if(flags_only == T){
+    flag_probs <- possible_records <- lapply(1:n2, function(j){
+      record <- hash$flags[[j]]$eligible_records
+      prob <- fs_probs[hash$flags[[j]]$eligible_patterns]
+      data.frame(id_1 = record,
+                 id_2 = j,
+                 prob = prob)
+    }) %>%
+      do.call(rbind, .) %>%
+      filter(prob > .5)
+
+    return(flag_probs)
+  }
 
   ids <- expand.grid(1:n1, 1:n2)
   all_probs <- data.frame(id_1 = ids[, 1],
@@ -23,6 +37,8 @@ estimate_links_fl <- function(out, hash, l_FNM=1, l_FM1=1, l_FM2=2, l_R=Inf,
     group_by(id_2) %>%
     summarize(matching_prob = sum(vabl_est)) %>%
     pull()
+
+
 
   prob_no_link <- 1 - total_match_prob
 

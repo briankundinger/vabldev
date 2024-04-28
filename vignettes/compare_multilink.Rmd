@@ -68,14 +68,6 @@ copy_index <- 1:overlap
 paste_index <- (overlap +1):(2*overlap)
 
 file1[paste_index, ] <- file1[copy_index, ]
-# file2[paste_index, ] <- file2[copy_index, ]
-
-# file1 <- file1 %>% 
-#   arrange(rec_id) %>% 
-#   select(-rec_id)
-# file2 <- file2 %>% 
-#   arrange(rec_id) %>% 
-#   select(-rec_id)
 
 cd <- compare_records(file1, file2, c(2, 3, 5, 6) + 1,
                         types = c("lv", "lv", "bi", "bi"))
@@ -127,7 +119,7 @@ cd_multilink <- multilink::create_comparison_data(all_records,
                                   duplicates = c(1, 0), 
                                   verbose = T)
 prior <- multilink::specify_prior(cd_multilink, NA, NA, 0,
-                                  NA, c(5, 1), NA, list(1, 1), NA, NA)
+                                  NA, c(2, 1), NA, list(1, 1), NA, NA)
 
 chain_multilink <- multilink::gibbs_sampler(cd_multilink, prior, n_iter = S)
 result_ML <- multilink::find_bayes_estimate(chain_multilink$partitions, burn)

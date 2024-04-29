@@ -36,15 +36,7 @@ records <- records %>%
 
 n1 <- 500
 n2 <- 500
-#overlap <- n2/2
 
-# Ztrue <- n1 + 1:n2
-# Ztrue[1:overlap] <- 1:overlap
-
-# Ztrue <- rep(0, n2)
-# Ztrue[1:overlap] <- 1:overlap
-# Ztrue[(overlap +1):(2*overlap)] <- 1:overlap
-# Ztrue_pairs <- cbind(Ztrue, 1:n2)
 
 Ztrue_pairs <- data.frame(id_1 = 1:(2*overlap), 
                           id_2 = rep(1:overlap, 2)) %>% 

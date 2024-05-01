@@ -122,16 +122,20 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
       if(k == 1){
       Z_pattern <- cbind(Z_pattern, rep(0, n2))
       Z_samps[[s]] <- cbind(Z_samps[[s]], rep(0, n2))
+      beta_k = 1
       } else {
         Z_pattern <- cbind(Z_pattern, rep(NA, n2))
         Z_samps[[s]] <- cbind(Z_samps[[s]], rep(NA, n2))
+        beta_k <- (1 / pi_vec[k-1]) - 1
       }
 
       n_possible <- n_possible_vec[k]
       n_last_iter <- min(n_possible, n_last_iter)
 
-      #pi <- rbeta(1, n_last_iter + alpha, n_possible - n_last_iter + beta)
-      pi <- rbeta(1, n_last_iter + alpha, n_possible - n_last_iter + k^3)
+      #pi <- rbeta(1, n_last_iter + alpha, n_possible - n_last_iter + beta_k)
+      pi <- rbeta(1, n_last_iter + alpha, n_possible - n_last_iter + beta)
+      #pi <- rbeta(1, n_last_iter + alpha, n_possible - n_last_iter + k^3)
+      #pi <- rbeta(1, n_last_iter + alpha, n2 - n_last_iter + beta)
 
       hash_weights <- lapply(hash_count_list, function(x){
         x * unique_weights

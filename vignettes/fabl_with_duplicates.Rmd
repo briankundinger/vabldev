@@ -22,7 +22,8 @@ With this specification, 20 records in $X_2$ have matches in $X_1$. Of those 20,
 n1 <- 200 # target
 n2 <- 100 # base
 #overlap <- c(20, 10, 5, 1)
-overlap = n2/2
+overlap <- c(20, 20)
+#overlap = n2/2
 S = 100
 burn = S * .1
 
@@ -31,11 +32,11 @@ u <- c(.01, .99, .01, .99,
        1/30, 1- 1/30, 1/12, 1 - 1/12, 1/15, 1 - 1/15)
 
 levels <- rep(2, 5)
-#cd <- simulate_comparisons_mm(m, u, levels, n1, n2, overlap)
-cd <- simulate_comparisons(m, u, levels, n1, n2, overlap)
+cd <- simulate_comparisons_mm(m, u, levels, n1, n2, overlap)
+#cd <- simulate_comparisons(m, u, levels, n1, n2, overlap)
 hash <- hash_comparisons(cd, all_patterns = F)
 
-out <- variational_fastlink(hash)
+#out <- variational_fastlink(hash)
 ```
 
 There are two approaches to doing record linkage here through fabl. 
@@ -45,21 +46,21 @@ There are two approaches to doing record linkage here through fabl.
 The first method we label the databases such that $X_2$ is the file with duplicates. We then run standard `fabl`. 
 
 ```{r}
-cd_swapped <- swap_base_file(cd)
-
-hash_swapped <- hash_comparisons(cd_swapped)
-out_swapped <- fabl(hash_swapped)
+# cd_swapped <- swap_base_file(cd)
+# 
+# hash_swapped <- hash_comparisons(cd_swapped)
+# out_swapped <- fabl(hash_swapped)
 ```
 Works exactly as we would hope. 
 
 ```{r}
-estimate_links(out_swapped, hash_swapped, resolve = F)$Z_hat
+#estimate_links(out_swapped, hash_swapped, resolve = F)$Z_hat
 ```
 
 This clearly works under the vabl framework as well
 ```{r}
-out_vabl <- vabl(hash_swapped)
-estimate_links(out_vabl, hash_swapped, resolve = F)$Z_hat
+# out_vabl <- vabl(hash_swapped)
+# estimate_links(out_vabl, hash_swapped, resolve = F)$Z_hat
 
 ```
 
@@ -71,9 +72,19 @@ $$\tau_k = p(\text{record } j \in X_2 \text{ has a } k^{th} \text{ match in } X_
 The single vector representation for the matches no longer works, but I can still easily find the matches. 
 
 ```{r}
-out_mm <- fabl_mm_2(hash_mm)
-result <- estimate_links_mm(out_mm, hash_mm, resolve = F)
+out_mm <- fabl_mm(hash)
+result <- estimate_links_mm(out_mm, hash, resolve = F)
 result$Z_hat
+```
+
+
+```{r}
+out_fl <- variational_fastlink(hash)
+estimate_fl <- estimate_links_fl(out_fl, hash)
+Z_hat <- data.frame(id_1 = estimate_fl$fs_linkages$a,
+                    id_2 = estimate_fl$fs_linkages$b)
+estimate_fl$fs_linkages[, c(1, 2, 5)]
+#evaluate_links(Z_hat, Ztrue_pairs, n1, "pairs")
 ```
 
 # Comparison

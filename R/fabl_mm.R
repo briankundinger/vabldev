@@ -130,7 +130,9 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
       n_possible <- n_possible_vec[k]
       n_last_iter <- min(n_possible, n_last_iter)
 
-      pi <- rbeta(1, n_last_iter + alpha, n_possible - n_last_iter + beta)
+      #pi <- rbeta(1, n_last_iter + alpha, n_possible - n_last_iter + beta)
+      pi <- rbeta(1, n_last_iter + alpha, n_possible - n_last_iter + k^3)
+
       hash_weights <- lapply(hash_count_list, function(x){
         x * unique_weights
       })
@@ -189,11 +191,13 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
   Z_samps <- Z_samps[-(1:burn)]
   m_samps <- m_samps[ ,-(1:burn)]
   u_samps <- u_samps[ ,-(1:burn)]
+  pi_samps <- pi_samps[-(1:burn)]
 
   # Format pi_samps
 
   list(Z = Z_samps,
        m = m_samps,
-       u = u_samps)
+       u = u_samps,
+       pi = pi_samps)
 
 }

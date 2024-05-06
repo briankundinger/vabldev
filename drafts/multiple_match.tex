@@ -177,6 +177,19 @@ In cases where we know at least one file is duplicate free, we can safely use \t
 %
 %When $X_1$ is free of duplicates, the multiple match algorithm makes a second attempt at matching, which has complexity $ \left(P L_1 \right)$. This is a minor addition of computation time, but gives the added security of identifying duplicates. It may be a nice option just to use when you're not sure!
 
+\section{Preliminary Findings}
+The comparisons are not quite striaghtforward, so I'll have to be creative with the best way to present the findings. Here's an overview:
+\begin{itemize}
+	\item \texttt{multilink} allows the user to set the maximum number of records in each dataset that can form part of a cluster of matching records. If this number is mispecified, results are poor.
+	\item When there are sufficiently many matches to properly estimate the $m$ parameters, fabl with multiple match outperforms base FS. 
+	\item When there are few matches in the data set, fabl drastically overmatch. Basically, the algorithm just keeps identifying matches, muddying up the $m$ distribution, and everything deteriorates from there. 
+	\item This behavior can be ameliorated by preventing the algorithm from overmatching. Two options:
+	\begin{itemize}
+		\item Set $K$, a maximum number of matches per record. This works well, and is more robust to misspecification than the maximum cluster size in multilink.
+		\item Use informative priors on each $\eta_k \sim \text{Beta}(\alpha_{\eta}, \beta_{\eta_k})$. I have had good results with $\beta_{\eta_k} = k^2$ and $\beta_{\eta_k} = k^3$. Note that if this penalty prior takes the general form $\beta_{\eta_k} = k^{\tau}$, we attain fabl at $\tau = \infty$, and conceptually, $\tau$ can be estimated from the data or optimized through cross validation. 
+	\end{itemize}
+\end{itemize}
+
 \section{Simulations}
 Show accuracy under various settings of maximum cluster size for different algorithms. Recall will fall very quickly for \texttt{fabl}. Since we can't use Jaro, precision for \texttt{fastLink} will be poor.  Multilink may be very dependent on correctly specifying $K$. This multiple match approach should remain strong in all settings. 
 \section{Case Studies}

@@ -25,7 +25,7 @@ burn = S * .1
 m_prior <- u_prior <- alpha <- beta <- 1
 files <- list.files(path = "../data/sadinle_sim_data/", full.names = T)
 
-overlap <- 250
+overlap <- 100
 
 records <- read_csv(files[i], col_types = cols())
 records$file <- rep(2:1, length.out = dim(records)[1])
@@ -36,11 +36,6 @@ records <- records %>%
 
 n1 <- 500
 n2 <- 500
-
-
-Ztrue_pairs <- data.frame(id_1 = 1:(2*overlap), 
-                          id_2 = rep(1:overlap, 2)) %>% 
-  arrange(id_2)
 
 file1 <- records %>%
   filter(file ==1,
@@ -56,11 +51,21 @@ file2 <- records %>%
   data.frame(.) %>%
   mutate(occup = as.numeric(occup))
 
-# copy_index <- 1:overlap
-# paste_index <- (overlap +1):(2*overlap)
+copy_index <- 1:overlap
+paste_index <- (overlap +1):(2*overlap)
 
-copy_index <- 1:(overlap/2)
-paste_index <- (overlap +1):(overlap + overlap/2)
+Ztrue_pairs <- data.frame(id_1 = 1:(2*overlap),
+                          id_2 = rep(1:overlap, 2)) %>%
+  arrange(id_2)
+
+# copy_index <- 1:(overlap/2)
+# paste_index <- (overlap +1):(overlap + overlap/2)
+# 
+# Ztrue_pairs <- data.frame(id_1 = 1:(overlap + overlap/2), 
+#                           id_2 = c(rep(1:(overlap/2), 2), ((overlap/2)+1):overlap)) %>% 
+#   arrange(id_2)
+
+
 
 file1[paste_index, ] <- file1[copy_index, ]
 
@@ -77,7 +82,7 @@ hash <- hash_comparisons(cd)
 In this setting, the multiple match approach seems to work well. 
 
 ```{r}
-out_mm <- fabl_mm(hash, S = S, burn = burn)
+out_mm <- fabl_mm(hash, S = S, burn = burn, max_K = 2)
 result_mm <- estimate_links_mm(out_mm, hash, resolve = F)
 Z_hat <- cbind(result_mm$Z_hat$target_id, result_mm$Z_hat$base_id)
 evaluate_links(Z_hat, Ztrue_pairs, n1, "pairs")

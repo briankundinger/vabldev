@@ -19,10 +19,10 @@ devtools::load_all()
 With this specification, 20 records in $X_2$ have matches in $X_1$. Of those 20, 10 have two matches. Of those 10, 5 have 3 matches. And of those 5, one has 4 matches. 
 
 ```{r}
-n1 <- 200 # target
-n2 <- 100 # base
+n1 <- 4000# target
+n2 <- 4000 # base
 #overlap <- c(20, 10, 5, 1)
-overlap <- c(20, 20)
+overlap <- c(1000, 250, 5)
 #overlap = n2/2
 S = 100
 burn = S * .1
@@ -74,7 +74,7 @@ The single vector representation for the matches no longer works, but I can stil
 ```{r}
 out_mm <- fabl_mm(hash)
 result <- estimate_links_mm(out_mm, hash, resolve = F)
-result$Z_hat
+evaluate_links(result$Z_hat, cd$Z_true_long, n1, "pairs")
 ```
 
 
@@ -83,7 +83,9 @@ out_fl <- variational_fastlink(hash)
 estimate_fl <- estimate_links_fl(out_fl, hash)
 Z_hat <- data.frame(id_1 = estimate_fl$fs_linkages$a,
                     id_2 = estimate_fl$fs_linkages$b)
-estimate_fl$fs_linkages[, c(1, 2, 5)]
+
+evaluate_links(Z_hat, cd$Z_true_long, n1, "pairs")
+#estimate_fl$fs_linkages[, c(1, 2, 5)]
 #evaluate_links(Z_hat, Ztrue_pairs, n1, "pairs")
 ```
 

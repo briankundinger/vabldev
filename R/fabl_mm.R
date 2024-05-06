@@ -2,7 +2,7 @@
 #'
 fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
                                alpha = 1, beta = 1, S = 1000, burn = round(S * .1),
-                               show_progress = T){
+                               show_progress = T, max_K = Inf, tau = 0){
   # Implements bipartite record linkage with BK Sampling Mechanism
   #
   # Arguments
@@ -132,9 +132,10 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
       n_possible <- n_possible_vec[k]
       n_last_iter <- min(n_possible, n_last_iter)
 
+      pi <- rbeta(1, n_last_iter + alpha, n_possible - n_last_iter + k^tau)
+
       #pi <- rbeta(1, n_last_iter + alpha, n_possible - n_last_iter + beta_k)
-      pi <- rbeta(1, n_last_iter + alpha, n_possible - n_last_iter + beta)
-      #pi <- rbeta(1, n_last_iter + alpha, n_possible - n_last_iter + k^3)
+      # pi <- rbeta(1, n_last_iter + alpha, n_possible - n_last_iter + k^3)
       #pi <- rbeta(1, n_last_iter + alpha, n2 - n_last_iter + beta)
 
       hash_weights <- lapply(hash_count_list, function(x){
@@ -165,6 +166,10 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
       k <-  k + 1
 
       if(length(matchable) == 0){
+        break
+      }
+
+      if(k > max_K){
         break
       }
 

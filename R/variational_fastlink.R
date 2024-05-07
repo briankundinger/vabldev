@@ -9,8 +9,8 @@ variational_fastlink <- function(hash, threshold = 1e-6, tmax = 200, fixed_itera
   total_counts <- hash$total_counts #N_p
   hash_count_list <- hash$hash_count_list
   field_marker <- hash$field_marker
-  n1 <- hash$n1
-  n2 <- hash$n2
+  n1 <- as.double(hash$n1)
+  n2 <- as.double(hash$n2)
 
   # Priors
   alpha <- rep(1, length(field_marker))

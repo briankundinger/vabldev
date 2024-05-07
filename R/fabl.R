@@ -16,8 +16,8 @@ fabl <- function(hash, m_prior = 1, u_prior = 1, alpha = 1, beta = 1,
   # burn = number of iterations to be discarded as burn-in
   # show_progress = set to false to show simulation progress
 
-  n1 <- hash$n1
-  n2 <- hash$n2
+  n1 <- as.double(hash$n1)
+  n2 <- as.double(hash$n2)
   field_marker <- hash$field_marker
 
   unique_patterns <- hash$ohe

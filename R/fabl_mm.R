@@ -43,7 +43,11 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
 
   candidates <- 0:P
   #Z_compact <- vector("list", S)
-  Z_samps <- vector("list", S)
+  if(max_K == Inf){
+    Z_samps <- vector("list", S)
+  } else {
+    Z_samps <- array(NA, dim = c(n2, S, max_K))
+  }
 
   #Z.SAMPS <- matrix(NA, nrow = n2, ncol = S)
   m_samps <- matrix(NA, nrow = length(field_marker), ncol = S)
@@ -103,7 +107,9 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
     n_possible_vec <- n2
     matchable <- 1:n2
     Z_pattern <- vector()
-    Z_samps[[s]] <- vector()
+    if(max_K == Inf){
+      Z_samps[[s]] <- vector()
+    }
     removed_set <- c()
 
 
@@ -121,12 +127,18 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
 
       if(k == 1){
       Z_pattern <- cbind(Z_pattern, rep(0, n2))
+      if(max_K == Inf){
       Z_samps[[s]] <- cbind(Z_samps[[s]], rep(0, n2))
-      beta_k = 1
+      } else {
+        Z_samps[, s, k] <- 0
+      }
+      #beta_k = 1
       } else {
         Z_pattern <- cbind(Z_pattern, rep(NA, n2))
-        Z_samps[[s]] <- cbind(Z_samps[[s]], rep(NA, n2))
-        beta_k <- (1 / pi_vec[k-1]) - 1
+        if(max_K == Inf){
+          Z_samps[[s]] <- cbind(Z_samps[[s]], rep(NA, n2))
+        }
+        #beta_k <- (1 / pi_vec[k-1]) - 1
       }
 
       n_possible <- n_possible_vec[k]
@@ -154,7 +166,11 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
           record <- hash_to_file_1[[j]][[Z_pattern[j, k]]][index]
           hash_to_file_1[[j]][[Z_pattern[j, k]]] <- hash_to_file_1[[j]][[Z_pattern[j, k]]][hash_to_file_1[[j]][[Z_pattern[j, k]]] != record]
           #L[k] <- L + 1
-          Z_samps[[s]][j, k] <- record
+          if(max_K == Inf){
+            Z_samps[[s]][j, k] <- record
+          } else {
+            Z_samps[j, s, k] <- record
+          }
         }
       }
 
@@ -197,7 +213,11 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
 
 
 
-  Z_samps <- Z_samps[-(1:burn)]
+  if(max_K == Inf){
+    Z_samps <- Z_samps[-(1:burn)]
+  } else {
+    Z_samps <- Z_samps[, -(1:burn), ]
+  }
   m_samps <- m_samps[ ,-(1:burn)]
   u_samps <- u_samps[ ,-(1:burn)]
   pi_samps <- pi_samps[-(1:burn)]

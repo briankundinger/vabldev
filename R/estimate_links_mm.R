@@ -93,24 +93,12 @@ estimate_links_mm <- function(out, hash, lFNM=1, lFM1=1, lFM2=2, lR=Inf,
   n2 <- hash$n2
   Z_samps <- out$Z
 
-
+  if(typeof(Z_samps) == "list"){
   samps <- length(Z_samps)
   all_draws <- do.call(cbind, Z_samps)
   probs <- apply(all_draws, 1, function(x){
     table(x)/samps
   }, simplify = F)
-
-  # lapply(probs, function(x){
-  #   names(which(x > threshold)) %>%
-  #     as.numeric() %>%
-  #     as.
-  # })
-
-
-  # Z_hat <- purrr::map(probs, ~names(which(.x > threshold))) %>%
-  #   purrr::imap(., ~data.frame(target_id = .x, base_id = .y)) %>%
-  #   do.call(rbind, .) %>%
-  #   filter(target_id > 0)
 
   Z_hat <- purrr::imap(probs, ~data.frame(.x, base_id = .y)) %>%
     do.call(rbind, .) %>%
@@ -118,9 +106,39 @@ estimate_links_mm <- function(out, hash, lFNM=1, lFM1=1, lFM2=2, lR=Inf,
            prob = Freq) %>%
     mutate(target_id = as.numeric(as.character(target_id))) %>%
     relocate(base_id, .before = prob) %>%
-    #mutate(target_id = as.integer(target_id)) %>%
     filter(prob > threshold) %>%
     filter(target_id != 0)
+  } else {
+
+    samps <- ncol(Z_samps)
+    probs <- apply(Z_samps, 1, function(x){
+      table(x)/samps
+    }, simplify = F)
+
+    Z_hat <- purrr::imap(probs, ~data.frame(.x, base_id = .y)) %>%
+      do.call(rbind, .) %>%
+      rename(target_id = x,
+             prob = Freq) %>%
+      mutate(target_id = as.numeric(as.character(target_id))) %>%
+      relocate(base_id, .before = prob) %>%
+      filter(prob > threshold) %>%
+      filter(target_id != 0)
+
+
+    # prob_no_link <- sapply(probs, function(x){
+    #   x[1]
+    # })
+    # Z_hat <- rep(0, n2)
+    # best_match <- sapply(probs, function(x){
+    #   names(which.max(x))
+    # }) %>%
+    #   as.numeric()
+    # prob_best_match <- sapply(probs, function(x){
+    #   max(x)
+    # })
+    # link_indicator <- best_match < n1 + 1
+    # all_probs <- NULL
+  }
 
   # prob_no_link <- sapply(probs, function(x){
   #   sum(x[names(x) == 0])

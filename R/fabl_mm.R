@@ -55,7 +55,6 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
   n_possible_list <- list()
   L_list <- list()
   pi_samps <- list()
-  Z.temp <- rep(0, n1*n2)
   #Z <- rep(n1+1, n2)
   #Z <- matrix(n1 + 1, nrow = n2, ncol = 1)
   L <- 0

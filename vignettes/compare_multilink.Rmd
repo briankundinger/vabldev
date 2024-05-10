@@ -155,5 +155,13 @@ If there are multiple matches in the target file ($X_1$) for a single record in 
 out <- fabl(hash, S = S, burn = burn)
 result <- estimate_links(out, hash, resolve = F)
 result$Z_hat
-
 ```
+
+```{r}
+hash <- readRDS("../../multiple_match/out/ncvr/combine/hash")
+S = 3
+burn = 1
+chain <- fabl_mm(hash, S = S, burn = burn, max_K = 2)
+results <- estimate_links_mm(chain, hash)
+```
+

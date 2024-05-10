@@ -115,14 +115,31 @@ estimate_links_mm <- function(out, hash, lFNM=1, lFM1=1, lFM2=2, lR=Inf,
       table(x)/samps
     }, simplify = F)
 
-    Z_hat <- purrr::imap(probs, ~data.frame(.x, base_id = .y)) %>%
-      do.call(rbind, .) %>%
-      rename(target_id = x,
-             prob = Freq) %>%
-      mutate(target_id = as.numeric(as.character(target_id))) %>%
-      relocate(base_id, .before = prob) %>%
-      filter(prob > threshold) %>%
-      filter(target_id != 0)
+    # Z_hat <- purrr::imap(probs, ~data.frame(.x, base_id = .y)) %>%
+    #   do.call(rbind, .) %>%
+    #   rename(target_id = x,
+    #          prob = Freq) %>%
+    #   mutate(target_id = as.numeric(as.character(target_id))) %>%
+    #   relocate(base_id, .before = prob) %>%
+    #   filter(prob > threshold) %>%
+    #   filter(target_id != 0)
+
+    target_id <- sapply(probs, function(x){
+      names(which(x[-1] >.5))
+    }, simplify = F)
+
+    n_matches <- sapply(target_id, length)
+    base_id <- sapply(1:n2, function(j){
+      rep(j, n_matches[j])
+    }) %>%
+      unlist()
+
+    target_id <- target_id %>%
+      unlist() %>%
+      as.numeric()
+
+    Z_hat <- data.frame(target_id = target_id,
+                        base_id = base_id)
 
 
     # prob_no_link <- sapply(probs, function(x){

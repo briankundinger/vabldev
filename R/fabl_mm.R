@@ -109,11 +109,11 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
     #Z_pattern <- vector()
     if(max_K == Inf){
       Z_samps[[s]] <- vector()
-      Z_pattern <- rep(0, n2)
+      Z_pattern <- matrix(0, nrow = n2, ncol = 1)
     } else {
       Z_pattern <- matrix(0, nrow = n2, ncol = max_K)
     }
-    removed_set <- c()
+    #removed_set <- c()
 
 
     while(TRUE){
@@ -149,9 +149,6 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
         }
       }
 
-
-
-
       n_possible <- n_possible_vec[k]
       n_last_iter <- min(n_possible, n_last_iter)
 
@@ -170,7 +167,7 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
 
       for(j in matchable){
         Z_pattern[j, k] <- sample(candidates, 1,
-                       prob = c(1 - pi, hash_weights[[j]] * pi / n1))
+                       prob = c(1 - pi, hash_weights[[j]] * pi / (n1 - (k - 1))))
         if(Z_pattern[j, k] > 0){
           hash_count_list[[j]][Z_pattern[j, k]] <- hash_count_list[[j]][Z_pattern[j, k]] - 1
           index <- ceiling(runif(1) * length(hash_to_file_1[[j]][[Z_pattern[j, k]]]))

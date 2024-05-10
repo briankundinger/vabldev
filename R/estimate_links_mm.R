@@ -125,7 +125,9 @@ estimate_links_mm <- function(out, hash, lFNM=1, lFM1=1, lFM2=2, lR=Inf,
     #   filter(target_id != 0)
 
     target_id <- sapply(probs, function(x){
-      names(which(x[-1] >.5))
+      matches <- names(which(x >.5))
+      matches <- matches[matches != "0"]
+      matches
     }, simplify = F)
 
     n_matches <- sapply(target_id, length)

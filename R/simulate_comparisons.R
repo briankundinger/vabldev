@@ -16,7 +16,7 @@ simulate_comparisons <- function(m, u, levels, n1, n2, overlap,
   df2matches <- seq_len(overlap)
   df1matches <- df2matches + previous_matches
 
-  Z_true <- rep(n1 + 1, n2)
+  Z_true <- rep(0, n2)
   Z_true[df2matches] <- df1matches
 
   match_index <- which(ids[,1]  == (ids[,2]+ previous_matches))[seq_len(overlap)]

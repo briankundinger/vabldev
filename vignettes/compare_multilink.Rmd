@@ -20,7 +20,7 @@ We modify one of the Sadinle simulation files, introducing duplications in both 
 ```{r}
 i = 256
 all_patterns <- F
-S = 200 # Small S just to make things run faster 
+S = 500 # Small S just to make things run faster 
 burn = S * .1
 m_prior <- u_prior <- alpha <- beta <- 1
 files <- list.files(path = "../data/sadinle_sim_data/", full.names = T)
@@ -87,6 +87,11 @@ result_mm <- estimate_links_mm(out_mm, hash, resolve = F)
 Z_hat <- cbind(result_mm$Z_hat$target_id, result_mm$Z_hat$base_id)
 evaluate_links(Z_hat, Ztrue_pairs, n1, "pairs")
 
+
+out <- fabl(hash, S = S, burn = burn)
+result <- estimate_links(out, hash, resolve = F)
+Z_hat <- make_Zhat_pairs(result$Z_hat)
+evaluate_links(Z_hat, Ztrue_pairs, n1, "pairs")
 
 ```
 # Variational Fastlink

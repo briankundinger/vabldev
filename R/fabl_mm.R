@@ -47,6 +47,7 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
     Z_samps <- vector("list", S)
   } else {
     Z_samps <- array(NA, dim = c(n2, S, max_K))
+    Z_samps[, , 1] <- 0
   }
 
   #Z.SAMPS <- matrix(NA, nrow = n2, ncol = S)
@@ -105,9 +106,12 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
     pi_vec <- c()
     n_possible_vec <- n2
     matchable <- 1:n2
-    Z_pattern <- vector()
+    #Z_pattern <- vector()
     if(max_K == Inf){
       Z_samps[[s]] <- vector()
+      Z_pattern <- rep(0, n2)
+    } else {
+      Z_pattern <- matrix(0, nrow = n2, ncol = max_K)
     }
     removed_set <- c()
 
@@ -124,21 +128,29 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
       # Z_pattern <- cbind(Z_pattern, rep(NA, n2))
       # Z_samps[[s]] <- cbind(Z_samps[[s]], rep(NA, n2))
 
-      if(k == 1){
-      Z_pattern <- cbind(Z_pattern, rep(0, n2))
+      # if(k == 1){
+      # Z_pattern <- cbind(Z_pattern, rep(0, n2))
+      # if(max_K == Inf){
+      # Z_samps[[s]] <- cbind(Z_samps[[s]], rep(0, n2))
+      # }
+      # } else {
+      #   Z_pattern <- cbind(Z_pattern, rep(NA, n2))
+      #   if(max_K == Inf){
+      #     Z_samps[[s]] <- cbind(Z_samps[[s]], rep(NA, n2))
+      #   }
+      # }
+      #
       if(max_K == Inf){
-      Z_samps[[s]] <- cbind(Z_samps[[s]], rep(0, n2))
-      } else {
-        Z_samps[, s, k] <- 0
-      }
-      #beta_k = 1
-      } else {
-        Z_pattern <- cbind(Z_pattern, rep(NA, n2))
-        if(max_K == Inf){
-          Z_samps[[s]] <- cbind(Z_samps[[s]], rep(NA, n2))
+        if(k == 1){
+          Z_samps[[s]] <- cbind(Z_samps[[s]], rep(0, n2))
+        } else {
+          Z_pattern <- cbind(Z_pattern, rep(NA, n2))
+          Z_samps[[s]] <- cbind(Z_samps[[s]], rep(0, n2))
         }
-        #beta_k <- (1 / pi_vec[k-1]) - 1
       }
+
+
+
 
       n_possible <- n_possible_vec[k]
       n_last_iter <- min(n_possible, n_last_iter)

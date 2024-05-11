@@ -108,12 +108,23 @@ estimate_links_mm <- function(out, hash, lFNM=1, lFM1=1, lFM2=2, lR=Inf,
     relocate(base_id, .before = prob) %>%
     filter(prob > threshold) %>%
     filter(target_id != 0)
+
+  probs_matches <- Z_hat$prob
+  Z_hat <- Z_hat %>%
+    select(-prob)
   } else {
 
     samps <- ncol(Z_samps)
     probs <- apply(Z_samps, 1, function(x){
       table(x)/samps
     }, simplify = F)
+
+    probs_matches <- lapply(probs, function(x){
+      matches <- x[which(x >.5)]
+      matches <- matches[names(matches) != "0"]
+      matches
+    }) %>%
+      unlist()
 
     # Z_hat <- purrr::imap(probs, ~data.frame(.x, base_id = .y)) %>%
     #   do.call(rbind, .) %>%
@@ -194,6 +205,7 @@ estimate_links_mm <- function(out, hash, lFNM=1, lFM1=1, lFM2=2, lR=Inf,
 
   # return(list(Z_hat = Z_hat,
   #             prob = prob))
-return(list(Z_hat = Z_hat))
+return(list(Z_hat = Z_hat,
+            prob = probs_matches))
 }
 

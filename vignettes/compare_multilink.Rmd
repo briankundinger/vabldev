@@ -18,7 +18,7 @@ library(stringr)
 We modify one of the Sadinle simulation files, introducing duplications in both datasets. 
 
 ```{r}
-i = 256
+i = 1
 all_patterns <- F
 S = 500 # Small S just to make things run faster 
 burn = S * .1
@@ -82,7 +82,7 @@ hash <- hash_comparisons(cd)
 In this setting, the multiple match approach seems to work well. 
 
 ```{r}
-out_mm <- fabl_mm(hash, S = S, burn = burn, max_K = 2)
+out_mm <- fabl_mm(hash, S = S, burn = burn, max_K = 1)
 result_mm <- estimate_links_mm(out_mm, hash, resolve = F)
 Z_hat <- cbind(result_mm$Z_hat$target_id, result_mm$Z_hat$base_id)
 evaluate_links(Z_hat, Ztrue_pairs, n1, "pairs")
@@ -97,7 +97,7 @@ evaluate_links(Z_hat, Ztrue_pairs, n1, "pairs")
 # Variational Fastlink
 
 ```{r}
-out_fl <- variational_fastlink(hash)
+out_fl <- variational_fastlink(hash, tmax = 10000)
 estimate_fl <- estimate_links_fl(out_fl, hash)
 Z_hat <- data.frame(id_1 = estimate_fl$fs_linkages$a,
                     id_2 = estimate_fl$fs_linkages$b)
@@ -166,7 +166,13 @@ result$Z_hat
 hash <- readRDS("../../multiple_match/out/ncvr/combine/hash")
 S = 3
 burn = 1
-chain <- fabl_mm(hash, S = S, burn = burn, max_K = 2)
+chain <- fabl_mm(hash, S = S, burn = burn, max_K = 3)
 results <- estimate_links_mm(chain, hash)
+
+out_vabl <- vabl(hash)
+out_vabl$a_pi
+
+out_vabl <- variational_fastlink(hash, tmax = 1000)
+out_vabl$a_pi
 ```
 

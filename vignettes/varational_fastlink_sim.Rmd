@@ -20,7 +20,7 @@ devtools::load_all()
 ```{r}
 n1 <- 1000 # target
 n2 <- 1000 # base
-overlap <- n1 * .1 #for more shrinkage
+overlap <- n1 * .1 
 
 m <- rep(c(.95, .05), 5)
 u <- c(.01, .99, .01, .99,
@@ -41,7 +41,7 @@ eval_vabl <- evaluate_links(estimate_vabl$Z_hat, cd$Z_true, n1)
 
 list(fs_jaro = eval_fs_jaro, 
      fs_normalization = eval_fs_normalization, 
-     vabl = eval_fs_jaro)
+     vabl = eval_fs_vabl)
 ```
 
 

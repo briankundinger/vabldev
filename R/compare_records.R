@@ -7,8 +7,14 @@ compare_records <- function(df1, df2, fields,
                             breaks = c(0, .25, .5),
                                distance_metric = "Levenshtein"){
 
-  n1 <- nrow(df1)
-  n2 <- nrow(df2)
+  df1[df1 == ""] <- NA
+  df2[df2 == ""] <- NA
+
+  df1[df1 == " "] <- NA
+  df2[df2 == " "] <- NA
+
+  n1 <- as.double(nrow(df1))
+  n2 <- as.double(nrow(df2))
   FF <- length(fields)
 
   if(typeof(breaks) == "double"){

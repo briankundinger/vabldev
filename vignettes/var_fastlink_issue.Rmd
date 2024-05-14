@@ -1,0 +1,240 @@
+---
+title: "fabl_with_duplicates"
+output: html_document
+date: "2024-03-29"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load Functions
+
+```{r}
+devtools::load_all()
+```
+
+## Works Fine
+
+In most record linkage tasks, variational fastlink and vabl produce similar results
+
+```{r}
+i = 1
+all_patterns <- F
+m_prior <- u_prior <- alpha <- beta <- 1
+files <- list.files(path = "../data/sadinle_sim_data/", full.names = T)
+
+overlap <- 100
+
+records <- read_csv(files[i], col_types = cols())
+records$file <- rep(2:1, length.out = dim(records)[1])
+
+records <- records %>%
+  janitor::clean_names() %>%
+  mutate(rec_id = as.numeric(str_extract(rec_id, "\\d{3}")) + 1)
+
+n1 <- 500
+n2 <- 500
+
+file1 <- records %>%
+  filter(file ==1,
+         rec_id <= n1) %>%
+  as.matrix(.) %>%
+  data.frame(.) %>%
+  mutate(occup = as.numeric(occup))
+
+file2 <- records %>%
+  filter(file == 2,
+         rec_id %in% c(1:overlap, (n1 +1):(1000 - overlap))) %>%
+  as.matrix() %>%
+  data.frame(.) %>%
+  mutate(occup = as.numeric(occup))
+
+Z_true_pairs <- data.frame(id_1 = 1:overlap,
+                          id_2 = 1:overlap) %>%
+  arrange(id_2)
+
+
+cd <- compare_records(file1, file2, c(3, 4, 6, 7),
+                      types = c("lv", "lv", "bi", "bi"), 
+                      breaks = c(0, .25))
+
+hash <- hash_comparisons(cd)
+```
+
+
+```{r}
+out_vabl <- vabl(hash)
+results_vabl <- estimate_links(out_vabl, hash)
+Z_hat <- make_Zhat_pairs(results_vabl$Z_hat)
+eval <- evaluate_links(Z_hat, Z_true_pairs, n1, "pairs")
+eval
+out_vabl$a_pi / (n1 * n2)
+
+split(out_vabl$a, hash$field_marker) %>%
+    lapply(., function(x){
+      x/sum(x)
+    }) %>%
+    unlist()
+```
+
+```{r}
+out_var_fl <- variational_fastlink(hash)
+results <- estimate_links_fl(out_var_fl, hash)
+Z_hat <- make_Zhat_pairs(results$Z_hat_jaro)
+eval <- evaluate_links(Z_hat, Z_true_pairs, n1, "pairs")
+eval
+out_var_fl$a_lambda/(n1 * n2)
+
+split(out_var_fl$a, hash$field_marker) %>%
+    lapply(., function(x){
+      x/sum(x)
+    }) %>%
+    unlist()
+
+```
+```{r}
+# fastLink
+
+fl_out <- fastLink::fastLink(file1, file2, 
+                             varnames = names(file1)[c(2, 3, 5, 6) + 1],
+                             stringdist.match = names(file1)[c(3, 4)],
+                             partial.match = names(file1)[c(2, 3) + 1],
+                             stringdist.method = "lv",
+                             cut.a = 1, cut.p = .75, dedupe.matches = T,
+                             threshold.match = .5,
+                             verbose = F, return.all = F, tol.em = 1e-07)
+fl_out$EM$p.m
+
+
+Z_hat <- data.frame(id_1 = fl_out$matches$inds.a,
+                    id_2 = fl_out$matches$inds.b)
+
+evaluate_links(Z_hat, Z_true_pairs, n1, "pairs")
+
+```
+```{r}
+# fl_out$EM$patterns.w %>% 
+#   data.frame() %>% 
+#   mutate(prob = fl_out$EM$zeta.j) %>% 
+#   filter(prob > .5) %>% 
+#   summarize(total_matches = sum(counts))
+# 
+# length(fl_out$matches$inds.a)
+
+fl_out$EM$patterns.w
+```
+
+# NCVR Issue
+
+For some reason, variational fastlink here to produces very different results. It is drastically overmatching, which we can see in the evaluatoin metrics, the trajectory of the $a_{\lambda}$ parameter, and in the implied $m$ distribution. 
+
+
+```{r}
+hash <- readRDS("../../multiple_match/out/ncvr/combine/hash")
+n1 <- as.double(hash$n1)
+n2 <- as.double(hash$n2)
+
+out_vabl <- vabl(hash)
+out_vabl$a_pi / (n1 * n2)
+
+out_fl <- variational_fastlink(hash, tmax = 2000)
+out_fl$a_lambda / (n1 * n2)
+```
+
+```{r}
+
+ncvr_a <- readRDS("../../multiple_match/data/ncvr_a")
+ncvr_b <- readRDS("../../multiple_match/data/ncvr_b")
+fl_out <- fastLink::fastLink(ncvr_a, ncvr_b[1:100, ], varnames = names(ncvr_a)[c(4, 5, 6, 7, 9, 10)],
+                   stringdist.match = names(ncvr_a)[c(4, 6)],
+                   partial.match = names(ncvr_a)[c(4, 6)],
+                   stringdist.method = "lv",
+                   cut.a = 1, cut.p = .75, dedupe.matches = F, threshold.match = .5,
+                   n.cores = 1, verbose = T, tol.em = 1e-07)
+
+
+```
+```{r}
+fl_out$EM$patterns.w[, 7]
+chunk<- readRDS("../../multiple_match/out/ncvr/hash/hash_0001")
+patterns <- chunk$ohe[chunk$total_counts > 0, ]
+counts <- chunk$total_counts[chunk$total_counts > 0]
+ohe_by_feature <- lapply(unique(chunk$field_marker), function(x){
+  patterns[, chunk$field_marker == x]
+})
+
+feature <- seperate[[6]]
+L_f <- ncol(thing)
+gamma <- list()
+
+for(i in 1:length(ohe_by_feature)){
+  feature <- ohe_by_feature[[i]]
+  L_f <- ncol(feature)
+  gamma[[i]] <- feature %>% 
+    apply(., 1, function(x){
+    value <- L_f - which(x == 1)
+    if(value == L_f){
+      value <- NA
+    }
+    value
+  })
+}
+
+    
+gamma_BK <- gamma %>% 
+  do.call(cbind, .) %>% 
+  data.frame() %>% 
+  unite("pattern", X1:X6) %>% 
+  mutate(counts = counts) %>% 
+  arrange(desc(counts))
+
+gamma_fastlink <- fl_out$EM$patterns.w %>% 
+  data.frame() %>% 
+  unite("pattern", gamma.1:gamma.6) %>% 
+  arrange(desc(counts)) %>% 
+  select(pattern, counts)
+  
+
+View(gamma_BK)
+View(gamma_fastlink)
+
+fl_out$matches$inds.a
+```
+
+```{r}
+ncvr_a[ncvr_a == ""] <- NA
+ncvr_b[ncvr_b == ""] <- NA
+n1 <- nrow(ncvr_a)
+n2 <- nrow(ncvr_b)
+
+batch_size <- 100
+
+normal_batches <- n2 %/% batch_size
+last_batch <- n2 %% batch_size
+
+batch_id <-c(rep(1:normal_batches, each = batch_size), rep(normal_batches + 1, last_batch))
+batch <- ncvr_b[batch_id == k, ]
+
+#fields <- c(4, 5, 6, 7, 9, 10, 13)
+#types <- rep("bi", length(fields))
+
+fields <- c(4, 5, 6, 7, 9, 10)
+types <- c("lv", "bi", "lv", "bi", "bi", "bi")
+#2241
+
+# fields <- c(4, 5, 6)
+# types <- c("lv", "bi", "lv")
+cd <- compare_records(ncvr_a, batch, fields = fields, types = types,
+                      breaks = c(0, .25))
+
+
+hash <- hash_comparisons(cd, all_patterns = T, R = 10, algorithm = c("vabl", "fabl", "fastLink"))
+```
+
+```{r}
+patterns <- hash$ohe[hash$total_counts > 0, ]
+counts <- hash$total_counts[hash$total_counts > 0]
+counts %>% sort()
+```
+

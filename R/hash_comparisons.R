@@ -1,7 +1,7 @@
 #' @export
 #'
 hash_comparisons <- function(cd,
-         algorithm = c("vabl", "fabl", "BRL_hash", "fastLink"), R = 0,
+         algorithm = c("vabl", "fabl", "BRL_hash", "FS"), R = 0,
          all_patterns = FALSE, store_pair_to_pattern = TRUE){
 
 
@@ -147,7 +147,7 @@ hash_comparisons <- function(cd,
     hash_to_file_1 <- NULL
   }
 
-  if(!("fastLink" %in% algorithm)){
+  if(!("FS" %in% algorithm)){
     hash_id <- NULL
   }
 

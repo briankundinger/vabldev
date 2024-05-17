@@ -19,10 +19,10 @@ devtools::load_all()
 With this specification, 20 records in $X_2$ have matches in $X_1$. Of those 20, 10 have two matches. Of those 10, 5 have 3 matches. And of those 5, one has 4 matches. 
 
 ```{r}
-n1 <- 4000# target
-n2 <- 4000 # base
+n1 <- 1000# target
+n2 <- 1000 # base
 #overlap <- c(20, 10, 5, 1)
-overlap <- c(1000, 250, 5)
+overlap <- c(500, 250, 5)
 #overlap = n2/2
 S = 100
 burn = S * .1
@@ -72,8 +72,8 @@ $$\tau_k = p(\text{record } j \in X_2 \text{ has a } k^{th} \text{ match in } X_
 The single vector representation for the matches no longer works, but I can still easily find the matches. 
 
 ```{r}
-out_mm <- fabl_mm(hash)
-result <- estimate_links_mm(out_mm, hash, resolve = F)
+out_mm <- fabl_mm(hash, S =S, burn = burn,  max_K = 10)
+result <- estimate_links_mm(out_mm, hash, resolve = T)
 evaluate_links(result$Z_hat, cd$Z_true_long, n1, "pairs")
 ```
 

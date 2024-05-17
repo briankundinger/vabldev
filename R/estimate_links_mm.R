@@ -94,24 +94,24 @@ estimate_links_mm <- function(out, hash, lFNM=1, lFM1=1, lFM2=2, lR=Inf,
   Z_samps <- out$Z
 
   if(typeof(Z_samps) == "list"){
-  samps <- length(Z_samps)
-  all_draws <- do.call(cbind, Z_samps)
-  probs <- apply(all_draws, 1, function(x){
-    table(x)/samps
-  }, simplify = F)
+    samps <- length(Z_samps)
+    all_draws <- do.call(cbind, Z_samps)
+    probs <- apply(all_draws, 1, function(x){
+      table(x)/samps
+    }, simplify = F)
 
-  Z_hat <- purrr::imap(probs, ~data.frame(.x, base_id = .y)) %>%
-    do.call(rbind, .) %>%
-    rename(target_id = x,
-           prob = Freq) %>%
-    mutate(target_id = as.numeric(as.character(target_id))) %>%
-    relocate(base_id, .before = prob) %>%
-    filter(prob > threshold) %>%
-    filter(target_id != 0)
+    Z_hat <- purrr::imap(probs, ~data.frame(.x, base_id = .y)) %>%
+      do.call(rbind, .) %>%
+      rename(target_id = x,
+             prob = Freq) %>%
+      mutate(target_id = as.numeric(as.character(target_id))) %>%
+      relocate(base_id, .before = prob) %>%
+      filter(prob > threshold) %>%
+      filter(target_id != 0)
 
-  probs_matches <- Z_hat$prob
-  Z_hat <- Z_hat %>%
-    select(-prob)
+    probs_matches <- Z_hat$prob
+    Z_hat <- Z_hat %>%
+      select(-prob)
   } else {
 
     samps <- ncol(Z_samps)
@@ -125,15 +125,6 @@ estimate_links_mm <- function(out, hash, lFNM=1, lFM1=1, lFM2=2, lR=Inf,
       matches
     }) %>%
       unlist()
-
-    # Z_hat <- purrr::imap(probs, ~data.frame(.x, base_id = .y)) %>%
-    #   do.call(rbind, .) %>%
-    #   rename(target_id = x,
-    #          prob = Freq) %>%
-    #   mutate(target_id = as.numeric(as.character(target_id))) %>%
-    #   relocate(base_id, .before = prob) %>%
-    #   filter(prob > threshold) %>%
-    #   filter(target_id != 0)
 
     target_id <- sapply(probs, function(x){
       matches <- names(which(x >.5))
@@ -153,74 +144,25 @@ estimate_links_mm <- function(out, hash, lFNM=1, lFM1=1, lFM2=2, lR=Inf,
 
     Z_hat <- data.frame(target_id = target_id,
                         base_id = base_id)
-
-    double_matches <- Z_hat$target_id[duplicated(Z_hat$target_id)]
-
-    if(resolve == TRUE & length(double_matches) > 0){
-      if (lR == Inf){
-        to_resolve <- unlist(lapply(double_matches, function(x){
-          index <- which(Z_hat$target_id == x)
-          base_probs <- probs_matches[index]
-          non_matches <- index[-which.max(base_probs)]
-          non_matches
-        }))
-        Z_hat <- Z_hat[-to_resolve, ]
-        probs_matches <- probs_matches[-to_resolve]
-      }
-    }
-
-
-    # prob_no_link <- sapply(probs, function(x){
-    #   x[1]
-    # })
-    # Z_hat <- rep(0, n2)
-    # best_match <- sapply(probs, function(x){
-    #   names(which.max(x))
-    # }) %>%
-    #   as.numeric()
-    # prob_best_match <- sapply(probs, function(x){
-    #   max(x)
-    # })
-    # link_indicator <- best_match < n1 + 1
-    # all_probs <- NULL
   }
 
-  # prob_no_link <- sapply(probs, function(x){
-  #   sum(x[names(x) == 0])
-  # })
-  # threshold <- 1/2
-  # temp <- Z_samps %>%
-  #   do.call(rbind, .) %>%
-  #   group_by(id_1, id_2) %>%
-  #   count() %>%
-  #   mutate(prob = n / length(Z_samps)) %>%
-  #   filter(prob > threshold) %>%
-  #   ungroup()
-  #
-  # Z_hat <- temp %>%
-  #   select(id_1, id_2)
-  #
-  # prob <- temp %>%
-  #   select(prob)
-  #
-  # double_matches <- Z_hat$id_1[duplicated(Z_hat$id_1)]
-  #
-  # if(resolve == TRUE & length(double_matches) > 0){
-  #   if (lR == Inf){
-  #     to_resolve <- unlist(lapply(double_matches, function(x){
-  #       df2_options <- which(Z_hat$id_1 == x)
-  #       df2_probs <- prob[df2_options, ]
-  #       non_matches <- df2_options[-which.max(df2_probs)]
-  #       non_matches
-  #     }))
-  #     Z_hat <- Z_hat[-to_resolve, ]
-  #     prob <- prob[-to_resolve, ]
-  #   }
-  # }
+  double_matches <- Z_hat$target_id[duplicated(Z_hat$target_id)]
 
-  # return(list(Z_hat = Z_hat,
-  #             prob = prob))
-return(list(Z_hat = Z_hat,
-            prob = probs_matches))
+  if(resolve == TRUE & length(double_matches) > 0){
+    if (lR == Inf){
+      to_resolve <- unlist(lapply(double_matches, function(x){
+        index <- which(Z_hat$target_id == x)
+        base_probs <- probs_matches[index]
+        non_matches <- index[-which.max(base_probs)]
+        non_matches
+      }))
+      Z_hat <- Z_hat[-to_resolve, ]
+      probs_matches <- probs_matches[-to_resolve]
+    }
+  }
+
+
+  return(list(Z_hat = Z_hat,
+              prob = probs_matches))
 }
 

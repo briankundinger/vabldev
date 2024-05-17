@@ -72,7 +72,11 @@ $$\tau_k = p(\text{record } j \in X_2 \text{ has a } k^{th} \text{ match in } X_
 The single vector representation for the matches no longer works, but I can still easily find the matches. 
 
 ```{r}
-out_mm <- fabl_mm(hash, S =S, burn = burn,  max_K = 10)
+out_mm <- fabl_mm(hash, S =S, burn = burn,  max_K = 3)
+result <- estimate_links_mm(out_mm, hash, resolve = T)
+evaluate_links(result$Z_hat, cd$Z_true_long, n1, "pairs")
+
+out_mm <- fabl_mm(hash, S =S, burn = burn)
 result <- estimate_links_mm(out_mm, hash, resolve = T)
 evaluate_links(result$Z_hat, cd$Z_true_long, n1, "pairs")
 ```

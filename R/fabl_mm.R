@@ -123,7 +123,11 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
         n_last_iter = 0
       } else {
         #n_last_iter <- n_possible_list[[s - 1]][k]
+        if(max_K == Inf){
+          n_last_iter <- sum(Z_samps[[s-1]][matchable, k] > 0, na.rm = T)
+        } else {
         n_last_iter <- sum(Z_samps[matchable, s - 1, k] > 0, na.rm = T)
+        }
       }
 
       # Z_pattern <- cbind(Z_pattern, rep(NA, n2))

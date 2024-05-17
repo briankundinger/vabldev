@@ -154,6 +154,21 @@ estimate_links_mm <- function(out, hash, lFNM=1, lFM1=1, lFM2=2, lR=Inf,
     Z_hat <- data.frame(target_id = target_id,
                         base_id = base_id)
 
+    double_matches <- Z_hat$target_id[duplicated(Z_hat$target_id)]
+
+    if(resolve == TRUE & length(double_matches) > 0){
+      if (lR == Inf){
+        to_resolve <- unlist(lapply(double_matches, function(x){
+          base_options <- which(Z_hat$target_id == x)
+          base_probs <- prob_matches[base_options, ]
+          non_matches <- base_options[-which.max(base_probs)]
+          non_matches
+        }))
+        Z_hat <- Z_hat[-to_resolve, ]
+        prob_matches <- prob[-to_resolve, ]
+      }
+    }
+
 
     # prob_no_link <- sapply(probs, function(x){
     #   x[1]

@@ -2,7 +2,7 @@
 #'
 fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
                                alpha = 1, beta = 1, S = 1000, burn = round(S * .1),
-                               show_progress = T, max_K = Inf, tau = 0){
+                               show_progress = T, max_K = Inf, tau = 0, extra_prior = F){
   # Implements bipartite record linkage with BK Sampling Mechanism
   #
   # Arguments
@@ -122,7 +122,8 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
       } else if(length(n_possible_list[[s - 1]]) < k){
         n_last_iter = 0
       } else {
-        n_last_iter <- n_possible_list[[s - 1]][k]
+        #n_last_iter <- n_possible_list[[s - 1]][k]
+        n_last_iter <- sum(Z_samps[matchable, s - 1, k] > 0, na.rm = T)
       }
 
       # Z_pattern <- cbind(Z_pattern, rep(NA, n2))
@@ -150,7 +151,22 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
       }
 
       n_possible <- n_possible_vec[k]
-      n_last_iter <- min(n_possible, n_last_iter)
+      #n_last_iter <- min(n_possible, n_last_iter)
+      # n_last_iter <- apply(Z_samps[matchable, s - 1, k], 1, function(x){
+      #   any(x > 0)
+      # }) %>%
+      #   sum(. , na.rm = T)
+
+
+
+    #   if(extra_prior == T){
+    #   if(k == 1){
+    #     penalty <- 0
+    #   } else {
+    #     penalty <- pi_vec[k-1] * (1 - pi_vec[k-1]) * n_possible_vec[k-1]
+    #   }
+    #   pi <- rbeta(1, n_last_iter + alpha, n_possible - n_last_iter + penalty + 1)
+    # }
 
       pi <- rbeta(1, n_last_iter + alpha, n_possible - n_last_iter + k^tau)
 

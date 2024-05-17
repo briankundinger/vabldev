@@ -136,11 +136,29 @@ n1 <- as.double(hash$n1)
 n2 <- as.double(hash$n2)
 
 out_vabl <- vabl(hash)
-out_vabl$a_pi / (n1 * n2)
+out_vabl$a_pi / (n1)
 
-out_fl <- variational_fastlink(hash, tmax = 2000)
+out_fl <- variational_fastlink(hash, tmax = 1000)
+#results <- estimate_links_fl(out_fl, hash)
 out_fl$a_lambda / (n1 * n2)
+
+split(out_fl$a, hash$field_marker) %>% 
+  lapply(., function(x){
+    x/sum(x)
+  })
+
+split(out_fl$b, hash$field_marker) %>% 
+  lapply(., function(x){
+    x/sum(x)
+  })
 ```
+
+```{r}
+fastlink_out <-  readRDS("../../multiple_match/out/ncvr_results/chain/fastlink")
+fastlink_out$EM$p.m
+fastlink_out$EM$p.gamma.k.u
+```
+
 
 ```{r}
 
@@ -236,5 +254,10 @@ hash <- hash_comparisons(cd, all_patterns = T, R = 10, algorithm = c("vabl", "fa
 patterns <- hash$ohe[hash$total_counts > 0, ]
 counts <- hash$total_counts[hash$total_counts > 0]
 counts %>% sort()
+
+fastlink_out<- readRDS("../../multiple_match/out/ncvr_results/chain/fastlink")
+
+View(fastlink_out)
+
 ```
 

@@ -79,7 +79,7 @@ variational_fastlink <- function(hash, threshold = 1e-6, tmax = 200, fixed_itera
       colSums()
 
     BZ <- ohe %>%
-      sweep(., 1, total_counts - (matching_weight_by_pattern), "*") %>%
+      sweep(., 1, total_counts - matching_weight_by_pattern, "*") %>%
       colSums()
 
     a <- alpha + AZ

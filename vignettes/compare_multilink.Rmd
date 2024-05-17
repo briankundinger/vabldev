@@ -18,14 +18,14 @@ library(stringr)
 We modify one of the Sadinle simulation files, introducing duplications in both datasets. 
 
 ```{r}
-i = 1
+i = 250
 all_patterns <- F
 S = 500 # Small S just to make things run faster 
 burn = S * .1
 m_prior <- u_prior <- alpha <- beta <- 1
 files <- list.files(path = "../data/sadinle_sim_data/", full.names = T)
 
-overlap <- 100
+overlap <- 25
 
 records <- read_csv(files[i], col_types = cols())
 records$file <- rep(2:1, length.out = dim(records)[1])
@@ -82,16 +82,22 @@ hash <- hash_comparisons(cd)
 In this setting, the multiple match approach seems to work well. 
 
 ```{r}
-out_mm <- fabl_mm(hash, S = S, burn = burn, max_K = 1)
-result_mm <- estimate_links_mm(out_mm, hash, resolve = F)
+out_mm <- fabl_mm(hash, S = S, burn = burn, max_K = 10)
+result_mm <- estimate_links_mm(out_mm, hash, resolve = T)
+Z_hat <- cbind(result_mm$Z_hat$target_id, result_mm$Z_hat$base_id)
+evaluate_links(Z_hat, Ztrue_pairs, n1, "pairs")
+
+out_mm <- fabl_mm(hash, S = S, burn = burn, max_K = 2)
+result_mm <- estimate_links_mm(out_mm, hash, resolve = T)
 Z_hat <- cbind(result_mm$Z_hat$target_id, result_mm$Z_hat$base_id)
 evaluate_links(Z_hat, Ztrue_pairs, n1, "pairs")
 
 
-out <- fabl(hash, S = S, burn = burn)
-result <- estimate_links(out, hash, resolve = F)
-Z_hat <- make_Zhat_pairs(result$Z_hat)
-evaluate_links(Z_hat, Ztrue_pairs, n1, "pairs")
+
+# out <- fabl(hash, S = S, burn = burn)
+# result <- estimate_links(out, hash, resolve = F)
+# Z_hat <- make_Zhat_pairs(result$Z_hat)
+# evaluate_links(Z_hat, Ztrue_pairs, n1, "pairs")
 
 ```
 # Variational Fastlink

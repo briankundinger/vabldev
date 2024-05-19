@@ -110,8 +110,8 @@ estimate_links_mm <- function(out, hash, lFNM=1, lFM1=1, lFM2=2, lR=Inf,
       filter(target_id != 0)
 
     probs_matches <- Z_hat$prob
-    Z_hat <- Z_hat %>%
-      select(-prob)
+    # Z_hat <- Z_hat %>%
+    #   select(prob)
   } else {
 
     samps <- ncol(Z_samps)

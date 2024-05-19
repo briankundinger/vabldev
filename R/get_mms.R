@@ -35,7 +35,7 @@ get_mms <- function(out, hash, transitivity = T){
 
   for(j in 1:n2){
     samples <- Z_samps[j, , ] %>%
-      apply(., 1, sort)
+      apply(., 1, sort, simplify = F)
 
     unique_sets <- samples %>%
       unique()

@@ -18,14 +18,14 @@ library(stringr)
 We modify one of the Sadinle simulation files, introducing duplications in both datasets. 
 
 ```{r}
-i = 256
+i = 1
 all_patterns <- F
 S = 1000 # Small S just to make things run faster 
 burn = S * .1
 m_prior <- u_prior <- alpha <- beta <- 1
 files <- list.files(path = "../data/sadinle_sim_data/", full.names = T)
 
-overlap <- 50
+overlap <- 225
 
 records <- read_csv(files[i], col_types = cols())
 records$file <- rep(2:1, length.out = dim(records)[1])
@@ -117,7 +117,7 @@ evaluate_links(Z_hat, Ztrue_pairs, n1, "pairs")
 # Z_hat <- cbind(result_mm$Z_hat$target_id, result_mm$Z_hat$base_id)
 # evaluate_links(Z_hat, Ztrue_pairs, n1, "pairs")
 
-
+out_mm <- fabl_mm(hash, S = S, burn = burn)
 result_mm <- get_mms(out_mm, hash)
 Z_hat <- cbind(result_mm$Z_hat$target_id, result_mm$Z_hat$base_id)
 evaluate_links(Z_hat, Ztrue_pairs, n1, "pairs")

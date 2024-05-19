@@ -17,7 +17,8 @@ Imports:
     purrr,
     stringr, 
     levitate,
-    RecordLinkage
+    RecordLinkage,
+    abind
 Suggests: 
     knitr,
     rmarkdown

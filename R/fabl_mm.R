@@ -142,7 +142,7 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
       k <-  k + 1
 
       if(k > highest_K){
-        Z_samps <- abind(Z_samps, array(NA, dim = c(n2, S, 1)), along = 3)
+        Z_samps <- abind::abind(Z_samps, array(NA, dim = c(n2, S, 1)), along = 3)
         highest_K <- highest_K + 1
       }
 

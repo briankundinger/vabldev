@@ -4,7 +4,7 @@
 #'
 #'
 
-get_mms <- function(out, hash){
+get_mms <- function(out, hash, transitivity = T){
 
   identify_conflicts <- function(set, mms){
     common_entities <- sapply(seq_along(mms), function(j){
@@ -18,6 +18,17 @@ get_mms <- function(out, hash){
   n2 <- hash$n2
   Z_samps <- out$Z
   samps <- ncol(Z_samps)
+  # if(typeof(Z_samps) == "list"){
+  #   samps <- length(Z_samps)
+  #   View(Z_samps)
+  #
+  # } else {
+  #
+  # samps <- ncol(Z_samps)
+  # }
+
+  # thing <- array(0, dim = c(2, 3, 4)
+  # abind(thing, along = #)
 
   mms <- vector("list", n2)
   mms_probs <- vector("double", n2)
@@ -38,30 +49,30 @@ get_mms <- function(out, hash){
 
 
 
-  unique_mms <- unique(mms)
-  unique_mms_map <- match(mms, unique_mms)
-  conflicts <- sapply(unique_mms, identify_conflicts, unique_mms)
+  if(transitivity == TRUE){
+    unique_mms <- unique(mms)
+    unique_mms_map <- match(mms, unique_mms)
+    conflicts <- sapply(unique_mms, identify_conflicts, unique_mms)
 
-  if(any(conflicts >0)){
-    conflicts_df <- data.frame(code_1 = conflicts) %>%
-      mutate(code_2 = row_number()) %>%
-      filter(code_1 > 0)
+    if(any(conflicts >0)){
+      conflicts_df <- data.frame(code_1 = conflicts) %>%
+        mutate(code_2 = row_number()) %>%
+        filter(code_1 > 0)
 
-    for(i in seq_len(nrow(conflicts_df))){
+      for(i in seq_len(nrow(conflicts_df))){
+        higher_prob <- data.frame(set = unique_mms_map,
+                                  probs = mms_probs) %>%
+          mutate(record = row_number()) %>%
+          filter(set %in% conflicts_df[i, ]) %>%
+          mutate(size = sapply(mms[record], length)) %>%
+          mutate(total_prob = probs * size) %>%
+          filter(total_prob == max(total_prob)) %>%
+          select(set) %>%
+          pull()
 
-    higher_prob <- data.frame(set = unique_mms_map,
-                              probs = mms_probs) %>%
-      mutate(record = row_number()) %>%
-      filter(set %in% conflicts_df[i, ]) %>%
-      mutate(size = sapply(mms[record], length)) %>%
-      mutate(total_prob = probs * size) %>%
-      filter(total_prob == max(total_prob)) %>%
-      select(set) %>%
-      pull()
-
-    lower_prob <-  conflicts_df[i, ][conflicts_df[i, ] != higher_prob]
-
-    mms[which(unique_mms_map ==  lower_prob)] <- 0
+        lower_prob <-  conflicts_df[i, ][conflicts_df[i, ] != higher_prob]
+        mms[which(unique_mms_map ==  lower_prob)] <- 0
+      }
     }
   }
 

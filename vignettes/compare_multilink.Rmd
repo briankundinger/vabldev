@@ -102,7 +102,12 @@ In this setting, the multiple match approach seems to work well.
 # Z_hat <- cbind(result_mm$Z_hat$target_id, result_mm$Z_hat$base_id)
 # evaluate_links(Z_hat, Ztrue_pairs, n1, "pairs")
 
-out_mm <- fabl_mm(hash, S = S, burn = burn, max_K = 10)
+out_mm <- fabl_mm(hash, S = S, burn = burn, max_K = 2)
+result_mm <- estimate_links_mm(out_mm, hash, resolve = F)
+Z_hat <- cbind(result_mm$Z_hat$target_id, result_mm$Z_hat$base_id)
+evaluate_links(Z_hat, Ztrue_pairs, n1, "pairs")
+
+out_mm <- fabl_mm(hash, S = S, burn = burn)
 result_mm <- estimate_links_mm(out_mm, hash, resolve = F)
 Z_hat <- cbind(result_mm$Z_hat$target_id, result_mm$Z_hat$base_id)
 evaluate_links(Z_hat, Ztrue_pairs, n1, "pairs")

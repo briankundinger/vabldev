@@ -2,7 +2,7 @@
 #'
 fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
                                alpha = 1, beta = 1, S = 1000, burn = round(S * .1),
-                               show_progress = T, max_K = Inf, tau = 0, extra_prior = F){
+                               show_progress = T, max_K = Inf){
   # Implements bipartite record linkage with BK Sampling Mechanism
   #
   # Arguments
@@ -43,21 +43,15 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
 
   candidates <- 0:P
   #Z_compact <- vector("list", S)
-  if(max_K == Inf){
-    Z_samps <- vector("list", S)
-  } else {
-    Z_samps <- array(NA, dim = c(n2, S, max_K))
-    Z_samps[, , 1] <- 0
-  }
+  highest_K <- 1
+  Z_samps <- array(NA, dim = c(n2, S, highest_K))
+  Z_samps[, , 1] <- 0
 
-  #Z.SAMPS <- matrix(NA, nrow = n2, ncol = S)
   m_samps <- matrix(NA, nrow = length(field_marker), ncol = S)
   u_samps <- matrix(NA, nrow = length(field_marker), ncol = S)
   n_possible_list <- list()
   L_list <- list()
   pi_samps <- list()
-  #Z <- rep(n1+1, n2)
-  #Z <- matrix(n1 + 1, nrow = n2, ncol = 1)
   L <- 0
 
   m <- u <- rep(0, length(field_marker))
@@ -106,15 +100,7 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
     pi_vec <- c()
     n_possible_vec <- n2
     matchable <- 1:n2
-    #Z_pattern <- vector()
-    if(max_K == Inf){
-      Z_samps[[s]] <- vector()
-      Z_pattern <- matrix(0, nrow = n2, ncol = 1)
-    } else {
-      Z_pattern <- matrix(0, nrow = n2, ncol = max_K)
-    }
-    #removed_set <- c()
-
+    Z_pattern <- matrix(0, nrow = n2, ncol = 1)
 
     while(TRUE){
       if(s == 1){
@@ -122,68 +108,19 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
       } else if(length(n_possible_list[[s - 1]]) < k){
         n_last_iter = 0
       } else {
-        #n_last_iter <- n_possible_list[[s - 1]][k]
-        if(max_K == Inf){
-          n_last_iter <- sum(Z_samps[[s-1]][matchable, k] > 0, na.rm = T)
-        } else {
         n_last_iter <- sum(Z_samps[matchable, s - 1, k] > 0, na.rm = T)
-        }
       }
 
-      # Z_pattern <- cbind(Z_pattern, rep(NA, n2))
-      # Z_samps[[s]] <- cbind(Z_samps[[s]], rep(NA, n2))
-
-      # if(k == 1){
-      # Z_pattern <- cbind(Z_pattern, rep(0, n2))
-      # if(max_K == Inf){
-      # Z_samps[[s]] <- cbind(Z_samps[[s]], rep(0, n2))
-      # }
-      # } else {
-      #   Z_pattern <- cbind(Z_pattern, rep(NA, n2))
-      #   if(max_K == Inf){
-      #     Z_samps[[s]] <- cbind(Z_samps[[s]], rep(NA, n2))
-      #   }
-      # }
-      #
-      if(max_K == Inf){
-        if(k == 1){
-          Z_samps[[s]] <- cbind(Z_samps[[s]], rep(0, n2))
-        } else {
-          Z_pattern <- cbind(Z_pattern, rep(NA, n2))
-          Z_samps[[s]] <- cbind(Z_samps[[s]], rep(0, n2))
-        }
-      }
+      Z_pattern <- cbind(Z_pattern, rep(NA, n2))
 
       n_possible <- n_possible_vec[k]
-      #n_last_iter <- min(n_possible, n_last_iter)
-      # n_last_iter <- apply(Z_samps[matchable, s - 1, k], 1, function(x){
-      #   any(x > 0)
-      # }) %>%
-      #   sum(. , na.rm = T)
 
+      pi <- rbeta(1, n_last_iter + alpha, n_possible - n_last_iter + beta)
 
-
-    #   if(extra_prior == T){
-    #   if(k == 1){
-    #     penalty <- 0
-    #   } else {
-    #     penalty <- pi_vec[k-1] * (1 - pi_vec[k-1]) * n_possible_vec[k-1]
-    #   }
-    #   pi <- rbeta(1, n_last_iter + alpha, n_possible - n_last_iter + penalty + 1)
-    # }
-
-      pi <- rbeta(1, n_last_iter + alpha, n_possible - n_last_iter + k^tau)
-
-      #pi <- rbeta(1, n_last_iter + alpha, n_possible - n_last_iter + beta_k)
-      # pi <- rbeta(1, n_last_iter + alpha, n_possible - n_last_iter + k^3)
-      #pi <- rbeta(1, n_last_iter + alpha, n2 - n_last_iter + beta)
 
       hash_weights <- lapply(hash_count_list, function(x){
         x * unique_weights
       })
-
-      # weight_split <- weight_df %>%
-      #   group_split(id_2)
 
       for(j in matchable){
         Z_pattern[j, k] <- sample(candidates, 1,
@@ -193,12 +130,7 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
           index <- ceiling(runif(1) * length(hash_to_file_1[[j]][[Z_pattern[j, k]]]))
           record <- hash_to_file_1[[j]][[Z_pattern[j, k]]][index]
           hash_to_file_1[[j]][[Z_pattern[j, k]]] <- hash_to_file_1[[j]][[Z_pattern[j, k]]][hash_to_file_1[[j]][[Z_pattern[j, k]]] != record]
-          #L[k] <- L + 1
-          if(max_K == Inf){
-            Z_samps[[s]][j, k] <- record
-          } else {
-            Z_samps[j, s, k] <- record
-          }
+          Z_samps[j, s, k] <- record
         }
       }
 
@@ -208,6 +140,11 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
       pi_vec <- c(pi_vec, pi)
 
       k <-  k + 1
+
+      if(k > highest_K){
+        Z_samps <- abind(Z_samps, array(NA, dim = c(n2, S, 1)), along = 3)
+        highest_K <- highest_K + 1
+      }
 
       if(length(matchable) == 0){
         break
@@ -240,17 +177,10 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
   }
 
 
-
-  if(max_K == Inf){
-    Z_samps <- Z_samps[-(1:burn)]
-  } else {
-    Z_samps <- Z_samps[, -(1:burn), ]
-  }
+  Z_samps <- Z_samps[, -(1:burn), ]
   m_samps <- m_samps[ ,-(1:burn)]
   u_samps <- u_samps[ ,-(1:burn)]
   pi_samps <- pi_samps[-(1:burn)]
-
-  # Format pi_samps
 
   list(Z = Z_samps,
        m = m_samps,

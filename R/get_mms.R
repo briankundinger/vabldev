@@ -18,17 +18,6 @@ get_mms <- function(out, hash, transitivity = T){
   n2 <- hash$n2
   Z_samps <- out$Z
   samps <- ncol(Z_samps)
-  # if(typeof(Z_samps) == "list"){
-  #   samps <- length(Z_samps)
-  #   View(Z_samps)
-  #
-  # } else {
-  #
-  # samps <- ncol(Z_samps)
-  # }
-
-  # thing <- array(0, dim = c(2, 3, 4)
-  # abind(thing, along = #)
 
   mms <- vector("list", n2)
   mms_probs <- vector("double", n2)

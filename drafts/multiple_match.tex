@@ -81,7 +81,7 @@
 %
 %\begin{subequations}
 %	\begin{align}
-%		\mathcal{L}(\bm{Z}, \bm{m}, \bm{u} \mid \gamma) &= \prod_{i=1}^{n_A}  \prod_{j=1}^{n_B}\prod_{f=1}^{F}\prod_{l=1}^{L_f}\left[  m_{fl}^{I(Z_j = i)}u_{fl}^{I(Z_j \neq i)}\right]^{I(\gamma_{ij}^f = l)I_{obs}(\gamma_{ij}^f)}, \label{eqn:likelihood}\\
+%		\mathcal{L}(Z, \bm{m}, \bm{u} \mid \gamma) &= \prod_{i=1}^{n_A}  \prod_{j=1}^{n_B}\prod_{f=1}^{F}\prod_{l=1}^{L_f}\left[  m_{fl}^{I(Z_j = i)}u_{fl}^{I(Z_j \neq i)}\right]^{I(\gamma_{ij}^f = l)I_{obs}(\gamma_{ij}^f)}, \label{eqn:likelihood}\\
 %		\bm{m}_f &\sim \text{Dirichlet}(\alpha_{f1}, \ldots, \alpha_{f L_f}), \forall f = 1, \ldots, F, \label{eqn:m} \\
 %		\bm{u}_f &\sim \text{Dirichlet}(\beta_{f1}, \ldots, \beta_{f L_f}),\forall f = 1, \ldots, F,  \label{eqn:u}\\
 %		p(Z_j = q| \pi)  &=
@@ -101,7 +101,7 @@ We attempt to resolve this paradox by extending the fabl framework to handle the
 
 \section{Multiple Match}
 
-We provide updated notation to allow us to describe one record in $B$ having multiple matches in $A$. Let $Z_j$ be a vector containing the indices for all of the records in $A$ that are a match with record $B_j$, and let $\mathcal{Z} = \{Z_j | j = 1, \ldots, n_B\}$ denote the set of all such vectors. Let $|Z_j| = \sum_{k=1}^{\infty} Z_j^k > 0$ denote the number of links associated with record $B_j$. 
+We provide updated notation to allow us to describe one record in $B$ having multiple matches in $A$. Let $Z_j$ be a vector containing the indices for all of the records in $A$ that are a match with record $B_j$, and let $Z = \{Z_j | j = 1, \ldots, n_B\}$ denote the set of all such vectors. Let $|Z_j| = \sum_{k=1}^{\infty} I(Z_{j, k}) > 0$ denote the number of links associated with record $B_j$. 
 
 We can allow each record in $B$ to match to multiple records in $A$ through a Dirichlet process prior. Define a vector of probabilities $\bm{\pi} = (\pi_0, \ldots)$ where $\pi_k$ is the probability that some record in $B$ has exactly $k$ matches in $A$. In implementation, we model each $\pi_k$ as a product of conditional probabilities: let $\eta_k$ be the probability that some record in $B$ has at least $k$ matches, given that it has at least $k-1$ matches. This gives us the stick breaking representation
 \begin{align}
@@ -109,11 +109,11 @@ We can allow each record in $B$ to match to multiple records in $A$ through a Di
 \end{align}
 where $\eta_k$ are independent random variables from a $\text{Beta}(\alpha_{\eta}, \beta_{\eta})$ distribution.
 
-Similar to fabl, we adopt a prior specification on $\mathcal{Z}$ so that each matching $Z_j$ of length $|Z_j| = k$ is equally likely. Formally, we have
+Similar to fabl, we adopt a prior specification on $Z$ so that each matching $Z_j$ of length $|Z_j| = k$ is equally likely. Formally, we have
 
 \begin{subequations}
 	\begin{align}
-		\mathcal{L}(\mathcal{Z}, \bm{m}, \bm{u} \mid \gamma) &= \prod_{i=1}^{n_A}  \prod_{j=1}^{n_B}\prod_{f=1}^{F}\prod_{l=1}^{L_f}\left[  m_{fl}^{I(i \in Z_j)}u_{fl}^{I(i \notin Z_j)}\right]^{I(\gamma_{ij}^f = l)I_{obs}(\gamma_{ij}^f)}, \label{eqn:likelihood}\\
+		\mathcal{L}(Z, \bm{m}, \bm{u} \mid \gamma) &= \prod_{i=1}^{n_A}  \prod_{j=1}^{n_B}\prod_{f=1}^{F}\prod_{l=1}^{L_f}\left[  m_{fl}^{I(i \in Z_j)}u_{fl}^{I(i \notin Z_j)}\right]^{I(\gamma_{ij}^f = l)I_{obs}(\gamma_{ij}^f)}, \label{eqn:likelihood}\\
 		\bm{m}_f &\sim \text{Dirichlet}(\alpha_{f1}, \ldots, \alpha_{f L_f}), \forall f = 1, \ldots, F, \label{eqn:m} \\
 		\bm{u}_f &\sim \text{Dirichlet}(\beta_{f1}, \ldots, \beta_{f L_f}),\forall f = 1, \ldots, F,  \label{eqn:u}\\
 		p(Z_j = q| \bm{\pi})  &=
@@ -131,11 +131,23 @@ Similar to fabl, we adopt a prior specification on $\mathcal{Z}$ so that each ma
 %MAKE MORE FORMAL.
 
 \subsection{Gibbs Sampler}
-Through MCMC, we are able to sequentially sample the components $Z_j^k$ of the matching vector $Z_j$. In this context, we use the sequence of priors
+Through MCMC, we are able to sequentially sample the components $Z_j^k$ of the matching vector $Z_j$. The first match for $B_j$ is made through the same sampler as was used in KUNDINGER:
+
 \begin{align}
-	p(Z_j^k|\eta_k) &= \begin{cases}
-		\frac{\eta_k}{n_j^k}, &  z_j^k \in N_j^k, \\
-		1 - \eta_k, & z_j = 0;
+	p(Z_{j, 1}|\eta_k) &= \begin{cases}
+		\frac{\eta_k}{n_1}, &  z_{j, 1} \in [n_1], \\
+		1 - \eta_k, & z_{j, 1} = 0;
+	\end{cases} \\
+	\eta_k &\sim \text{Beta}(\alpha_{\eta}, \beta_{\eta})
+\end{align}
+
+
+
+In this context, we use the sequence of priors
+\begin{align}
+	p(Z_{j, k}|\eta_k) &= \begin{cases}
+		\frac{\eta_k}{n_{j, k}}, &  z_{j, k} \in N_{j, k}, \\
+		1 - \eta_k, & z_{j, k} = \emptyset;
 		\end{cases} \\
 	\eta_k &\sim \text{Beta}(\alpha_{\eta}, \beta_{\eta})
 \end{align}
@@ -143,15 +155,27 @@ where $N_j^k$ is the set of records in $A$ that are available to be matched with
 
 This sequence of priors leads to the sequence of posteriors
 \begin{align}
-	p(Z_j^k|\eta_k, \bm{m}, \bm{u}, \gamma) &= \begin{cases}
+	p(Z_j^k|Z_j^{k-1}, \eta_k, \bm{m}, \bm{u}, \gamma) &= \begin{cases}
 		w_{ij}, & z_j^k \in N_j^k, \\
 		n_j^k \frac{1 - \eta_k}{\eta_k}, & z_j = 0;
 	\end{cases} \\
-	\eta_k &\sim \text{Beta}(\alpha_{\eta} + n_k(\mathcal{Z}), \beta_{\eta} + n_{k-1}(\mathcal{Z}) - n_k(\mathcal{Z}))
+	\eta_k &\sim \text{Beta}(\alpha_{\eta} + n_k(Z), \beta_{\eta} + n_{k-1}(Z) - n_k(Z))
 \end{align}
-where $n_k(\mathcal{Z}) = \sum_{j=1}^{n_B} I( |Z_j| \geq k)$ is the number of records in $B$ that have at least $k$ matches in $A$. Note that $n_0(\mathcal{Z}) = n_B$, and that for each $k$, we can view $n_{k-1}{(\mathcal{Z})}$ as a number of trials, and $n_{k}{(\mathcal{Z})}$ as a number of successes. 
+where $n_k(Z) = \sum_{j=1}^{n_B} I( |Z_j| \geq k)$ is the number of records in $B$ that have at least $k$ matches in $A$. Note that $n_0(Z) = n_B$, and that for each $k$, we can view $n_{k-1}{(Z)}$ as a number of trials, and $n_{k}{(Z)}$ as a number of successes. 
 
 This specification induces an extension of \texttt{fabl} with an iterative matching phase. In each iteration of the Gibbs sampler, we sample an initial set of links using $\eta_1$. For each record in $B$ that was found to have a link, we remove the linked record in $A$ from consideration, and then sample another potential link with $\eta_2$. We continue, using $\eta_k$ in the $k^{th}$ matching step, until no new links are found, at which we point the matching phase terminates. The $\bm{\eta}, \bm{m},$ and $\bm{u}$ parameters are estimated based on all of the links identified. Crucially, there is no need to specify a maximum number of links per record, as this estimated through the model.
+
+\section{Loss Function}
+
+If we know that there are no duplication in $B$, we can use the same loss function that we used in \texttt{fabl}. Of course, if we know there are no duplications, we can always swap the datasets and use standard \texttt{fabl} instead of the more complicated multiple match. 
+
+If there are potentially duplicates within $B$, then we need a different loss function to preserve transitivity. One idea is a slightly altered version of the I'm using maximal matching sets from \cite{steorts_bayesian_2016}.
+
+$$p(Z_j = q) =  \frac{1}{S}\sum_{s = 1}^S I\left(Z_j^{(s)} = q\right)$$
+
+Maximal matching sets are in conflict if one is a strict (or proper) subset of another. That is, the matching sets $Z_j$ and $Z_{j'}$ are in conflict if $Z_j \subsetneq Z_{j'}$ or $Z_{j'} \subsetneq Z_j$. In such cases, we calculate the total probability for each cluster, given by $|\hat{Z}_j| p(Z_j = q)$, and accept cluster with the highest total probability. This post-processing ensures transitivity. 
+
+
 
 \subsection{Variational Inference}
 There are several reasons why this prior would not be practical through variational inference.
@@ -177,18 +201,18 @@ In cases where we know at least one file is duplicate free, we can safely use \t
 %
 %When $X_1$ is free of duplicates, the multiple match algorithm makes a second attempt at matching, which has complexity $ \left(P L_1 \right)$. This is a minor addition of computation time, but gives the added security of identifying duplicates. It may be a nice option just to use when you're not sure!
 
-\section{Preliminary Findings}
-The comparisons are not quite striaghtforward, so I'll have to be creative with the best way to present the findings. Here's an overview:
-\begin{itemize}
-	\item \texttt{multilink} allows the user to set the maximum number of records in each dataset that can form part of a cluster of matching records. If this number is mispecified, results are poor.
-	\item When there are sufficiently many matches to properly estimate the $m$ parameters, fabl with multiple match outperforms base FS. 
-	\item When there are few matches in the data set, fabl drastically overmatch. Basically, the algorithm just keeps identifying matches, muddying up the $m$ distribution, and everything deteriorates from there. 
-	\item This behavior can be ameliorated by preventing the algorithm from overmatching. Two options:
-	\begin{itemize}
-		\item Set $K$, a maximum number of matches per record. This works well, and is more robust to misspecification than the maximum cluster size in multilink.
-		\item Use informative priors on each $\eta_k \sim \text{Beta}(\alpha_{\eta}, \beta_{\eta_k})$. I have had good results with $\beta_{\eta_k} = k^2$ and $\beta_{\eta_k} = k^3$. Note that if this penalty prior takes the general form $\beta_{\eta_k} = k^{\tau}$, we attain fabl at $\tau = \infty$, and conceptually, $\tau$ can be estimated from the data or optimized through cross validation. 
-	\end{itemize}
-\end{itemize}
+%\section{Preliminary Findings}
+%The comparisons are not quite striaghtforward, so I'll have to be creative with the best way to present the findings. Here's an overview:
+%\begin{itemize}
+%	\item \texttt{multilink} allows the user to set the maximum number of records in each dataset that can form part of a cluster of matching records. If this number is mispecified, results are poor.
+%	\item When there are sufficiently many matches to properly estimate the $m$ parameters, fabl with multiple match outperforms base FS. 
+%	\item When there are few matches in the data set, fabl drastically overmatch. Basically, the algorithm just keeps identifying matches, muddying up the $m$ distribution, and everything deteriorates from there. 
+%	\item This behavior can be ameliorated by preventing the algorithm from overmatching. Two options:
+%	\begin{itemize}
+%		\item Set $K$, a maximum number of matches per record. This works well, and is more robust to misspecification than the maximum cluster size in multilink.
+%		\item Use informative priors on each $\eta_k \sim \text{Beta}(\alpha_{\eta}, \beta_{\eta_k})$. I have had good results with $\beta_{\eta_k} = k^2$ and $\beta_{\eta_k} = k^3$. Note that if this penalty prior takes the general form $\beta_{\eta_k} = k^{\tau}$, we attain fabl at $\tau = \infty$, and conceptually, $\tau$ can be estimated from the data or optimized through cross validation. 
+%	\end{itemize}
+%\end{itemize}
 
 \section{Simulations}
 Show accuracy under various settings of maximum cluster size for different algorithms. Recall will fall very quickly for \texttt{fabl}. Since we can't use Jaro, precision for \texttt{fastLink} will be poor.  Multilink may be very dependent on correctly specifying $K$. This multiple match approach should remain strong in all settings. 

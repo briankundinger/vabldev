@@ -16,4 +16,11 @@ Marchant, N.~G., Kaplan, A., Elazar, D.~N., Rubinstein, B. I.~P. \harvardand\
   Computational and Graphical Statistics} {\bf 30}(2),~406--421.
 \newline\harvardurl{https://doi.org/10.1080/10618600.2020.1825451}
 
+\harvarditem[Steorts et~al.]{Steorts, Hall \harvardand\
+  Fienberg}{2016}{steorts_bayesian_2016}
+Steorts, R.~C., Hall, R. \harvardand\ Fienberg, S.~E.  \harvardyearleft
+  2016\harvardyearright , `A {Bayesian} {Approach} to {Graphical} {Record}
+  {Linkage} and {Deduplication}', {\em Journal of the American Statistical
+  Association} {\bf 111}(516),~1660--1672.
+
 \end{thebibliography}

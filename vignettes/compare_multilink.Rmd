@@ -20,12 +20,12 @@ We modify one of the Sadinle simulation files, introducing duplications in both 
 ```{r}
 i = 1
 all_patterns <- F
-S = 1000 # Small S just to make things run faster 
+S = 20 # Small S just to make things run faster 
 burn = S * .1
 m_prior <- u_prior <- alpha <- beta <- 1
 files <- list.files(path = "../data/sadinle_sim_data/", full.names = T)
 
-overlap <- 225
+overlap <- 100
 
 records <- read_csv(files[i], col_types = cols())
 records$file <- rep(2:1, length.out = dim(records)[1])
@@ -108,7 +108,7 @@ Z_hat <- cbind(result_mm$Z_hat$target_id, result_mm$Z_hat$base_id)
 evaluate_links(Z_hat, Ztrue_pairs, n1, "pairs")
 
 out_mm <- fabl_mm(hash, S = S, burn = burn)
-result_mm <- estimate_links_mm(out_mm, hash, resolve = F)
+result_mm <- estimate_links_mm(out_mm, hash, resolve = F, transitivity = T)
 Z_hat <- cbind(result_mm$Z_hat$target_id, result_mm$Z_hat$base_id)
 evaluate_links(Z_hat, Ztrue_pairs, n1, "pairs")
 
@@ -199,6 +199,7 @@ result$Z_hat
 
 ```{r}
 hash <- readRDS("../../multiple_match/out/ncvr/combine/hash")
+out <- readRDS("../../multiple_match/out/ncvr_results/chain/fabl_mm_2")
 S = 3
 burn = 1
 chain <- fabl_mm(hash, S = S, burn = burn, max_K = 3)

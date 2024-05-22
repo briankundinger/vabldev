@@ -7,45 +7,45 @@ Database file #1: biblio.bib
  :   howpublished= \url
  :                     {http://www.cs.utexas.edu/users/ml/riddle/}
 I'm skipping whatever remains of this entry
-You've used 2 entries,
+You've used 3 entries,
             2909 wiz_defined-function locations,
-            654 strings with 5297 characters,
-and the built_in function-call counts, 13630 in all, are:
-= -- 2274
-> -- 159
+            661 strings with 5473 characters,
+and the built_in function-call counts, 18648 in all, are:
+= -- 3093
+> -- 229
 < -- 0
-+ -- 1117
-- -- 49
-* -- 1226
-:= -- 2654
-add.period$ -- 2
-call.type$ -- 2
-change.case$ -- 28
-chr.to.int$ -- 2
-cite$ -- 2
-duplicate$ -- 32
-empty$ -- 70
-format.name$ -- 58
-if$ -- 2453
++ -- 1513
+- -- 70
+* -- 1672
+:= -- 3643
+add.period$ -- 3
+call.type$ -- 3
+change.case$ -- 42
+chr.to.int$ -- 3
+cite$ -- 3
+duplicate$ -- 48
+empty$ -- 108
+format.name$ -- 82
+if$ -- 3356
 int.to.chr$ -- 5
 int.to.str$ -- 0
-missing$ -- 2
-newline$ -- 11
-num.names$ -- 21
-pop$ -- 5
+missing$ -- 3
+newline$ -- 14
+num.names$ -- 32
+pop$ -- 7
 preamble$ -- 1
-purify$ -- 30
+purify$ -- 45
 quote$ -- 0
-skip$ -- 26
+skip$ -- 40
 stack$ -- 0
-substring$ -- 3285
-swap$ -- 6
-text.length$ -- 28
+substring$ -- 4459
+swap$ -- 9
+text.length$ -- 42
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 8
+type$ -- 12
 warning$ -- 0
-while$ -- 44
+while$ -- 67
 width$ -- 0
-write$ -- 30
+write$ -- 44
 (There was 1 error message)

@@ -178,6 +178,16 @@ estimate_links_mm <- function(out, hash, lFNM=1, lFM1=1, lFM2=2, lR=Inf,
 
     mms_df <- Z_hat %>%
       group_split(base_id, .keep = T)
+    # mms <- Z_hat %>%
+    #   group_split(base_id) %>%
+    #   lapply(., `[[`, "target_id")
+    #
+    # mms_prob <- Z_hat %>%
+    #   group_split(base_id) %>%
+    #   lapply(., `[[`, "prob")
+    # unique_mms <- unique(mms)
+    # unique_mms_map <- match(mms, unique_mms)
+    # conflicts <- sapply(unique_mms, identify_conflicts, unique_mms)
 
     # mms_df[[201]] <- data.frame(target_id = 25,
     #                             base_id = 201,
@@ -230,6 +240,12 @@ estimate_links_mm <- function(out, hash, lFNM=1, lFM1=1, lFM2=2, lR=Inf,
         # mms_prob[[which(unique_mms_map ==  lower_prob)]] <- 0
       }
     }
+
+    Z_hat <- set_id_df %>%
+      select(target_id, base_id)
+
+    probs_matches <- set_id_df %>%
+      select(prob)
   }
 
   # Z_hat <- lapply(1:n2, function(j){
@@ -240,11 +256,7 @@ estimate_links_mm <- function(out, hash, lFNM=1, lFM1=1, lFM2=2, lR=Inf,
   #   do.call(rbind, .) %>%
   #   filter(target_id != 0)
 
-  Z_hat <- set_id_df %>%
-    select(target_id, base_id)
 
-  probs_matches <- set_id_df %>%
-    select(prob)
 
   return(list(Z_hat = Z_hat,
               prob = probs_matches))

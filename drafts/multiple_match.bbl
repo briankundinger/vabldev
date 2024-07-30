@@ -8,6 +8,12 @@ Aleshin-Guendel, S. \harvardand\ Sadinle, M.  \harvardyearleft
   {\bf 0}(0),~1--10.
 \newline\harvardurl{https://doi.org/10.1080/01621459.2021.2013242}
 
+\harvarditem[Kundinger et~al.]{Kundinger, Reiter \harvardand\
+  Steorts}{2024}{kundinger_2023}
+Kundinger, B., Reiter, J. \harvardand\ Steorts, R.~C.  \harvardyearleft
+  2024\harvardyearright , `{Efficient and Scalable Bipartite Matching with Fast
+  Beta Linkage (fabl)}', {\em Bayesian Analysis (Accepted)} .
+
 \harvarditem[Marchant et~al.]{Marchant, Kaplan, Elazar, Rubinstein \harvardand\
   Steorts}{2021}{marchant_distributed_2019}
 Marchant, N.~G., Kaplan, A., Elazar, D.~N., Rubinstein, B. I.~P. \harvardand\
@@ -16,11 +22,14 @@ Marchant, N.~G., Kaplan, A., Elazar, D.~N., Rubinstein, B. I.~P. \harvardand\
   Computational and Graphical Statistics} {\bf 30}(2),~406--421.
 \newline\harvardurl{https://doi.org/10.1080/10618600.2020.1825451}
 
-\harvarditem[Steorts et~al.]{Steorts, Hall \harvardand\
-  Fienberg}{2016}{steorts_bayesian_2016}
-Steorts, R.~C., Hall, R. \harvardand\ Fienberg, S.~E.  \harvardyearleft
-  2016\harvardyearright , `A {Bayesian} {Approach} to {Graphical} {Record}
-  {Linkage} and {Deduplication}', {\em Journal of the American Statistical
-  Association} {\bf 111}(516),~1660--1672.
+\harvarditem{Sadinle}{2017}{sadinle_bayesian_2017}
+Sadinle, M.  \harvardyearleft 2017\harvardyearright , `Bayesian {Estimation} of
+  {Bipartite} {Matchings} for {Record} {Linkage}', {\em Journal of the American
+  Statistical Association} {\bf 112}(518),~600--612.
+
+\harvarditem{Wortman}{2019}{wortman2019}
+Wortman, J. P.~H.  \harvardyearleft 2019\harvardyearright , Record linkage
+  methods with applications to causal inference and election voting data, PhD
+  thesis, Duke University.
 
 \end{thebibliography}

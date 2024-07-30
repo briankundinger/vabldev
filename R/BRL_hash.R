@@ -86,11 +86,13 @@ BRL_hash <- function(hash, m_prior = 1, u_prior = 1,
       }
       Z[j] <- 0
 
-      empty_weight <- (n1 - L) * (n2 - L - 1 + beta) / (L + alpha)
+      #empty_weight <- (n1 - L) * (n2 - L - 1 + beta) / (L + alpha)
+      pi <- rbeta(1, L + alpha, n2 - L - 1 + beta)
 
       if(mode == "base"){
         available <- which(Z_inv == 0)
-        temp_weights <- c(empty_weight, unique_weights[pair_to_pattern[[j]][available]])
+        #temp_weights <- c(empty_weight, unique_weights[pair_to_pattern[[j]][available]])
+        temp_weights <- c(1 - pi, pi / length(avaiable) *unique_weights[pair_to_pattern[[j]][available]])
 
         Z[j] <- sample(c(0, available), 1, prob = temp_weights)
         if(Z[j] > 0){
@@ -109,7 +111,7 @@ BRL_hash <- function(hash, m_prior = 1, u_prior = 1,
           }
         }
         temp_weights <- n_current * unique_weights
-        probs <- c(empty_weight, temp_weights)
+        probs <-  c(1 - pi, (pi / n1) *temp_weights)
         pattern <- sample(candidates_P, 1, prob = probs)
         if(pattern == 0){
           Z[j] <- 0
@@ -131,7 +133,7 @@ BRL_hash <- function(hash, m_prior = 1, u_prior = 1,
       }
       else if(mode == "rejection"){
         hash_weights <- hash_count_list[[j]] * unique_weights
-        probs <- c(empty_weight, hash_weights)
+        probs <-  c(1 - pi, (pi / n1) *hash_weights)
         flag <- 1
         iter <- 0
         while(flag == 1){
@@ -155,7 +157,7 @@ BRL_hash <- function(hash, m_prior = 1, u_prior = 1,
 
             # O(n1)
             available <- which(Z_inv == 0)
-            temp_weights <- c(empty_weight, unique_weights[pair_to_pattern[[j]][available]])
+            temp_weights <-  c(1 - pi, (pi / length(avaiable)) *unique_weights[pair_to_pattern[[j]][available]])
 
             Z[j] <- sample(c(0, available), 1, prob = temp_weights)
             if(Z[j] > 0){

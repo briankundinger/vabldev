@@ -19,12 +19,12 @@ devtools::load_all()
 With this specification, 20 records in $X_2$ have matches in $X_1$. Of those 20, 10 have two matches. Of those 10, 5 have 3 matches. And of those 5, one has 4 matches. 
 
 ```{r}
-n1 <- 1000# target
-n2 <- 1000 # base
+n1 <- 500# target
+n2 <- 500 # base
 #overlap <- c(20, 10, 5, 1)
-overlap <- c(500, 250, 5)
+overlap <- c(50, 5)
 #overlap = n2/2
-S = 100
+S = 1000
 burn = S * .1
 
 m <- rep(c(.95, .05), 5)
@@ -46,10 +46,13 @@ There are two approaches to doing record linkage here through fabl.
 The first method we label the databases such that $X_2$ is the file with duplicates. We then run standard `fabl`. 
 
 ```{r}
-# cd_swapped <- swap_base_file(cd)
-# 
-# hash_swapped <- hash_comparisons(cd_swapped)
-# out_swapped <- fabl(hash_swapped)
+cd_swapped <- swap_base_file(cd)
+
+hash_swapped <- hash_comparisons(cd_swapped)
+out_swapped <- fabl(hash_swapped)
+results_swapped <- estimate_links(out_swapped, hash_swapped, resolve = F)
+Z_hat_swap <- make_Zhat_pairs(results_swapped$Z_hat)
+evaluate_links(cbind(Z_hat_swap$id_2, Z_hat_swap$id_1), cd$Z_true_long, n1, "pairs")
 ```
 Works exactly as we would hope. 
 
@@ -72,13 +75,15 @@ $$\tau_k = p(\text{record } j \in X_2 \text{ has a } k^{th} \text{ match in } X_
 The single vector representation for the matches no longer works, but I can still easily find the matches. 
 
 ```{r}
-out_mm <- fabl_mm(hash, S =S, burn = burn,  max_K = 3)
-result <- estimate_links_mm(out_mm, hash, resolve = T)
-evaluate_links(result$Z_hat, cd$Z_true_long, n1, "pairs")
+# out_mm <- fabl_mm(hash, S =S, burn = burn,  max_K = 3)
+# result <- estimate_links_mm(out_mm, hash, resolve = T)
+# evaluate_links(result$Z_hat, cd$Z_true_long, n1, "pairs")
 
 out_mm <- fabl_mm(hash, S =S, burn = burn)
 result <- estimate_links_mm(out_mm, hash, resolve = T)
-evaluate_links(result$Z_hat, cd$Z_true_long, n1, "pairs")
+Z_hat <- result$Z_hat %>% 
+  select(target_id, base_id)
+evaluate_links(Z_hat, cd$Z_true_long, n1, "pairs")
 ```
 
 

@@ -25,21 +25,6 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
   hash_count_list <- hash$hash_count_list
   hash_to_file_1 <-hash$hash_to_file_1
 
-  # nonmatch_df <- data.frame(id_2 = 1:n2,
-  #                           pattern = NA,
-  #                           count = 1)
-
-  # weight_df <- lapply(1:n2, function(x){
-  #   data.frame(id_2 = x,
-  #              pattern = factor(1:P),
-  #              count = hash_count_list[[x]])
-  # }) %>%
-  #   do.call(rbind, .) %>%
-  #   mutate(rn = row_number())
-  #
-  # %>%
-  #   bind_rows(nonmatch_df) %>%
-  #   mutate(rn = row_number())
 
   candidates <- 0:P
   #Z_compact <- vector("list", S)
@@ -51,11 +36,13 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
   u_samps <- matrix(NA, nrow = length(field_marker), ncol = S)
   n_possible_list <- list()
   L_list <- list()
-  pi_samps <- list()
+  eta_samps <- list()
   L <- 0
 
   m <- u <- rep(0, length(field_marker))
   matches <- rep(0,P)
+  eta <- rbeta(1, alpha, beta)
+  n_k <- c(n2, 0)
   #set.seed(1)
 
   # Gibbs
@@ -96,26 +83,35 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
     unique_weights <- exp(rowSums(ratio * unique_patterns, na.rm = TRUE))
     hash_count_list <- hash$hash_count_list
     hash_to_file_1 <- hash$hash_to_file_1
-    k <-  1
-    pi_vec <- c()
+
+    #pi_vec <- c()
     n_possible_vec <- n2
     matchable <- 1:n2
     Z_pattern <- matrix(0, nrow = n2, ncol = 1)
 
+    for(k in seq_along(n_k)[-1]){
+      eta[k-1] <- rbeta(1, n_k[k] + alpha, n_k[k-1] - n_k[k] + beta)
+    }
+    k <-  1
+
     while(TRUE){
-      if(s == 1){
-        n_last_iter = 0
-      } else if(length(n_possible_list[[s - 1]]) < k){
-        n_last_iter = 0
-      } else {
-        n_last_iter <- sum(Z_samps[matchable, s - 1, k] > 0, na.rm = T)
-      }
+      # if(s == 1){
+      #   n_last_iter = 0
+      # } else if(length(n_possible_list[[s - 1]]) < k){
+      #   n_last_iter = 0
+      # } else {
+      #   n_last_iter <- sum(Z_samps[matchable, s - 1, k] > 0, na.rm = T)
+      # }
 
       Z_pattern <- cbind(Z_pattern, rep(NA, n2))
 
-      n_possible <- n_possible_vec[k]
+      #n_possible <- n_possible_vec[k]
 
-      pi <- rbeta(1, n_last_iter + alpha, n_possible - n_last_iter + beta)
+      if(k > length(eta)){
+        eta_k <- rbeta(1, alpha, length(matchable) + beta)
+      } else {
+        eta_k <- eta[k]
+      }
 
 
       hash_weights <- lapply(hash_count_list, function(x){
@@ -124,7 +120,7 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
 
       for(j in matchable){
         Z_pattern[j, k] <- sample(candidates, 1,
-                       prob = c(1 - pi, hash_weights[[j]] * pi / (n1 - (k - 1))))
+                                  prob = c(1 - eta_k, hash_weights[[j]] * eta_k / (n1 - (k - 1))))
         if(Z_pattern[j, k] > 0){
           hash_count_list[[j]][Z_pattern[j, k]] <- hash_count_list[[j]][Z_pattern[j, k]] - 1
           index <- ceiling(runif(1) * length(hash_to_file_1[[j]][[Z_pattern[j, k]]]))
@@ -137,7 +133,7 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
       matchable <- seq_len(n2)[is.element(Z_pattern[, k] > 0, T)]
       n_possible_vec <- c(n_possible_vec, length(matchable))
 
-      pi_vec <- c(pi_vec, pi)
+      #pi_vec <- c(pi_vec, pi)
 
       k <-  k + 1
 
@@ -153,11 +149,13 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
       if(k > max_K){
         break
       }
-
     }
 
-    n_possible_list[[s]] <- n_possible_vec[-1]
-    pi_samps[[s]] <- pi_vec
+    match_indicator <- Z_pattern > 0
+    n_k <- c(n2, colSums(match_indicator, na.rm = T))
+
+    #n_possible_list[[s]] <- n_possible_vec[-1]
+    eta_samps[[s]] <- eta
 
     matches <- factor(Z_pattern, levels = 0:P) %>%
       table() %>%
@@ -180,11 +178,10 @@ fabl_mm <- function(hash, m_prior = 1, u_prior = 1,
   Z_samps <- Z_samps[, -(1:burn), ]
   m_samps <- m_samps[ ,-(1:burn)]
   u_samps <- u_samps[ ,-(1:burn)]
-  pi_samps <- pi_samps[-(1:burn)]
+  eta_samps <- eta_samps[-(1:burn)]
 
   list(Z = Z_samps,
        m = m_samps,
        u = u_samps,
-       pi = pi_samps)
-
+       eta = eta_samps)
 }
